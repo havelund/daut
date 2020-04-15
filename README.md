@@ -1,4 +1,4 @@
-# Monitoring Data Automata with Daut
+# Monitoring Data Streams with Data Automata
 
 Daut (Data automata) is an internal Scala DSL for writing event stream monitors. It
 supports a simple but yet interesting combination of state machines, temporal logic, 
@@ -41,6 +41,16 @@ object Main {
 ```
 
 In the following, we shall illustrate the API by going through a collection of examples.
+ 
+## Installation
+
+There are some options:
+
+- The repository is an [SBT](https://www.scala-sbt.org) project. To run it as an SBT project you must download SBT first, and follow the instructions there on how to run SBT projects. 
+
+- The main file is: [src/main/scala/daut/Monitor.scala](src/main/scala/daut/Monitor.scala). This source can alternatively be incorporated into your own project, fitting your own way of working, and you are up and running. One file is simplicity.
+
+- You may use an IDE, such as IntelliJ or Eclipse. IntelliJ can load the project in SBT mode.
  
 ## Basic Example
 
