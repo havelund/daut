@@ -1,29 +1,29 @@
-package dautid1_temporal
+package daut16_id_temporal
 
 import daut._
 import daut.Util.time
 
 /**
- * Property AcquireRelease: A task acquiring a lock should eventually release it. A task can acquire at most
- * one lock at a time.
+ * Property OneThread: When a thread takes a lock no other thread (including itself)
+ * can take the lock.
  */
 
 trait LockEvent
 case class acquire(t:Int, x:Int) extends LockEvent
 case class release(t:Int, x:Int) extends LockEvent
 
-class AcquireRelease extends Monitor[LockEvent] {
-  override def keyOf(event: LockEvent): Option[Int] = {
-    event match {
-      case acquire(t, _) => Some(t)
-      case release(t, _) => Some(t)
+class OneThread extends Monitor[LockEvent] {
+    override def keyOf(event: LockEvent): Option[Int] = {
+      event match {
+        case acquire(_, l) => Some(l)
+        case release(_, l) => Some(l)
+      }
     }
-  }
 
   always {
     case acquire(t, x) =>
-      hot {
-        case acquire(`t`,_) => error
+      watch {
+        case acquire(_,`x`) => error
         case release(`t`,`x`) => ok
       } label(t,x)
   }
@@ -31,9 +31,9 @@ class AcquireRelease extends Monitor[LockEvent] {
 
 object Main {
   def main(args: Array[String]) {
-    val INDEX = 1000000
-    DautOptions.DEBUG = false
-    val m = new AcquireRelease
+    val INDEX = 3
+    DautOptions.DEBUG = true
+    val m = new OneThread
     time (s"analyzing $INDEX acquisitions") {
       for (index <- 1 to INDEX) {
         m.verify(acquire(index, index))
@@ -45,4 +45,5 @@ object Main {
     m.end()
   }
 }
+
 

@@ -1223,7 +1223,7 @@ class Monitor[E] {
    * Updates error count.
    */
 
-  private def reportError() {
+  protected def reportError() {
     errorCount += 1
     if (DautOptions.PRINT_ERROR_BANNER) {
       println(
@@ -1252,9 +1252,9 @@ class Monitor[E] {
    *          error message.
    */
 
-  private def reportError(e: String): Unit = {
+  protected def reportError(e: String): Unit = {
     println("***********")
-    println(s"** ERROR : ${e} **")
+    println(s"ERROR : $e")
     println("***********")
     reportError()
   }

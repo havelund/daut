@@ -1,4 +1,4 @@
-package dautid6_temporal
+package daut20_id_temporal
 
 import daut._
 import daut.Util.time
