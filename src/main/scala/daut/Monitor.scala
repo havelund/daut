@@ -348,6 +348,14 @@ class Monitor[E] {
   }
 
   /**
+    * Returns all states (facts) contained in the monitor.
+    *
+    * @return all states.
+    */
+
+  def getAllStates: Set[state] = states.getAllStates
+
+  /**
    * A state of the monitor.
    */
 
@@ -831,7 +839,7 @@ class Monitor[E] {
    *         and `pred(s) == true`.
    */
 
-  protected def exists(pred: PartialFunction[state, Boolean]): Boolean = {
+  def exists(pred: PartialFunction[state, Boolean]): Boolean = {
     val alwaysFalse : PartialFunction[state, Boolean] = { case _ => false }
     states.getAllStates exists (pred orElse alwaysFalse)
   }
@@ -1180,7 +1188,7 @@ class Monitor[E] {
   /**
    * This method is called when the monitor encounters an error, be it a safety
    * error or a liveness error.
-   * It can be overridden by user. Its body is by detult empty.
+   * It can be overridden by user. Its body is by default empty.
    */
   protected def callBack(): Unit = {}
 
