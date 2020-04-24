@@ -3,3 +3,4 @@
 project/
 target/
 local-only
+src/test/scala/daut0_experiments/
