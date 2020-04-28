@@ -193,7 +193,7 @@ implicit def convBoolean2StateSet(b: Boolean): Set[state] = Set(if (b) ok else e
 
 #### How Did the Initial State Get Recorded?
 
-You may wonder how the state procuced by the `always` function ends up being monitored. After all, it is just a call of a function that returns a state. It happens conveniently that the first state created in a monitor becomes the initial state of the monitor (a side effect).
+You may wonder how the state procuced by the `always` function ends up being monitored. After all, it is just a call of a function that returns a state. It happens conveniently that any state created in a monitor before the first call of the `verify(event: Event)` method becomes part of the initial state of the monitor (a side effect of generating the state).
                                                                                 
 ## Naming the Intermediate State via a Function Call
 
@@ -1069,14 +1069,14 @@ When we run this program we get the following output:
 ===[acquire(1,100)]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   hot(1,100)
   always
 
 ===[acquire(2,200)]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   hot(1,100)
   hot(2,200)
   always
@@ -1093,7 +1093,7 @@ When we run this program we get the following output:
 CorrectLock error # 1
         
 --- CorrectLock:
-[main] 
+[memory] 
   hot(1,100)
   hot(1,200)
   always
@@ -1101,7 +1101,7 @@ CorrectLock error # 1
 ===[CANCEL]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 
@@ -1114,7 +1114,7 @@ Next, for each monitor, here we have one: `CorrectLock`, we see what states are 
 `acquire(1,100)` and `acquire(2,200)` we have the set:
 
 ```
-[main] 
+[memory] 
   hot(1,100)
   hot(2,200)
   always
@@ -1138,7 +1138,7 @@ we get the following output:
 ===[acquire(1,100)]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1148,7 +1148,7 @@ we get the following output:
 ===[acquire(2,200)]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1170,7 +1170,7 @@ we get the following output:
 CorrectLock error # 1
         
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1183,7 +1183,7 @@ CorrectLock error # 1
 ===[CANCEL]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1218,7 +1218,7 @@ Then the output will be less informative, and will only tell us what kind of sta
 ===[acquire(1,100)]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1228,7 +1228,7 @@ Then the output will be less informative, and will only tell us what kind of sta
 ===[acquire(2,200)]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1250,7 +1250,7 @@ Then the output will be less informative, and will only tell us what kind of sta
 CorrectLock error # 1
         
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
@@ -1263,7 +1263,7 @@ CorrectLock error # 1
 ===[CANCEL]===
 
 --- CorrectLock:
-[main] 
+[memory] 
   always
 
 [index=100]
