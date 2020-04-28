@@ -1,4 +1,8 @@
-# Monitoring Data Streams with Data Automata
+# Daut
+
+Version 1.5.0
+
+## Monitoring Data Streams with Data Automata
 
 Daut (Data automata) is an internal Scala DSL for writing event stream monitors. It
 supports a simple but yet interesting combination of state machines, temporal logic, 
