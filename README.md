@@ -1,6 +1,6 @@
 # Daut
 
-Version 1.5.0
+Version 1.5.1
 
 ## Monitoring Data Streams with Data Automata
 

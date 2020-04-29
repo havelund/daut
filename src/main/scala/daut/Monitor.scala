@@ -74,7 +74,7 @@ case class MonitorError() extends RuntimeException
   * @tparam E the type of events submitted to the monitor.
   */
 
-class Monitor[E] {
+class Monitor[E] { thisMonitor =>
 
   /**
     * This class represents all the active states in a monitor (excluding those of its sub-monitors).
@@ -376,6 +376,14 @@ class Monitor[E] {
     private[daut] var transitions: Transitions = noTransitions
 
     /**
+      * True iff. the transition function of the state has been initialized.
+      * Used to determine with versions of always, watch, etc, to call:
+      * those of the monitor or those of the state.
+      */
+
+    private var transitionsInitialized : Boolean = false
+
+    /**
       * This variable is true for final (acceptance) states: that is states where it is
       * acceptable to end up when the `end()` method is called. This corresponds to
       * acceptance states in standard automaton theory.
@@ -387,12 +395,16 @@ class Monitor[E] {
       * Updates the transition function to exactly the transition function provided.
       * This corresponds to a state where the monitor is just waiting (watching) until an event
       * is submitted that makes a transition fire. The state is final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts the transition function.
       * @return the state itself, allowing for further chained method calls.
       */
 
     def watch(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.watch(ts)
+      transitionsInitialized = true
       name = "watch"
       transitions = ts
       this
@@ -404,12 +416,16 @@ class Monitor[E] {
       * This corresponds to a state where the monitor is always waiting  until an event
       * is submitted that makes a transition fire, and where the state has a true
       * self loop, no matter what transition fires. The state is final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts the transition function.
       * @return the state itself, allowing for further chained method calls.
       */
 
     def always(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.always(ts)
+      transitionsInitialized = true
       name = "always"
       transitions = ts andThen (_ + this)
       this
@@ -420,12 +436,16 @@ class Monitor[E] {
       * This corresponds to a state where the monitor is just waiting (watching) until an event
       * is submitted that makes a transition fire. The state is non-final, meaning
       * that it is an error to be in this state on a call of the `end()` method.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts the transition function.
       * @return the state itself, allowing for further chained method calls.
       */
 
     def hot(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.hot(ts)
+      transitionsInitialized = true
       name = "hot"
       transitions = ts
       isFinal = false
@@ -437,12 +457,16 @@ class Monitor[E] {
       * modified to yield an error if it does not fire on the next submitted event.
       * The transition is weak in the sense that a next event does not have to occur (in contrast to strong next).
       * The state is therefore final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts the transition function.
       * @return the state itself, allowing for further chained method calls.
       */
 
     def wnext(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.wnext(ts)
+      transitionsInitialized = true
       name = "wnext"
       transitions = ts orElse { case _ => error }
       this
@@ -453,12 +477,16 @@ class Monitor[E] {
       * modified to yield an error if it does not fire on the next submitted event.
       * The transition is strong in the sense that a next event has to occur.
       * The state is therefore non-final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts the transition function.
       * @return the state itself, allowing for further chained method calls.
       */
 
     def next(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.next(ts)
+      transitionsInitialized = true
       name = "next"
       transitions = ts orElse { case _ => error }
       isFinal = false
@@ -472,6 +500,8 @@ class Monitor[E] {
       * first tries `ts1`, and if it can fire that is chosen. Otherwise `t2` is tried,
       * and if it can fire it is made to fire, and the unless-state is re-added to the resulting state set.
       * The transition function `ts1` does not need to ever fire, which makes the state final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts1 the transition function.
       * @return the state itself, allowing for further chained method calls.
@@ -479,6 +509,8 @@ class Monitor[E] {
 
     def unless(ts1: Transitions) = new {
       def watch(ts2: Transitions): state = {
+        if (transitionsInitialized) return thisMonitor.unless(ts1) watch (ts2)
+        transitionsInitialized = true
         name = "until"
         transitions = ts1 orElse (ts2 andThen (_ + thisState))
         thisState
@@ -493,6 +525,8 @@ class Monitor[E] {
       * and if it can fire it is made to fire, and the unless-state is re-added to the resulting state set.
       * The transition function `ts1` will need to eventually ever fire before `end()` is
       * called, which makes the state non-final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
       *
       * @param ts1 the transition function.
       * @return the state itself, allowing for further chained method calls.
@@ -500,6 +534,8 @@ class Monitor[E] {
 
     def until(ts1: Transitions) = new {
       def watch(ts2: Transitions): state = {
+        if (transitionsInitialized) return thisMonitor.until(ts1) watch (ts2)
+        transitionsInitialized = true
         name = "until"
         transitions = ts1 orElse (ts2 andThen (_ + thisState))
         isFinal = false
@@ -803,7 +839,7 @@ class Monitor[E] {
     * @return an anonymous unless-state.
     */
 
-  protected def unless(ts1: Transitions) = new {
+  protected def unless(ts1: Transitions) : Object{def watch(ts2: Transitions) : state} = new {
     def watch(ts2: Transitions) = new anonymous {
       unless(ts1) watch (ts2)
     }
@@ -822,7 +858,7 @@ class Monitor[E] {
     * @return an anonymous until-state.
     */
 
-  protected def until(ts1: Transitions) = new {
+  protected def until(ts1: Transitions) : Object{def watch(ts2: Transitions) : state} = new {
     def watch(ts2: Transitions) = new anonymous {
       until(ts1) watch (ts2)
     }
