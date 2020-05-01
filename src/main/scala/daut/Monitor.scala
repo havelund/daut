@@ -1147,6 +1147,20 @@ class Monitor[E] { thisMonitor =>
   }
 
   /**
+    * Verifies a full trace of events. For each event `e` it calls `verify(e)`. It calls `end()`
+    * at the end of the trace.
+    *
+    * @param events list (trace) of events to verify.
+    */
+
+  def verify(events: List[E]): Unit = {
+    for (event <- events) {
+      verify(event)
+    }
+    end()
+  }
+
+  /**
     * Submits an event to the monitor for verification against the specification.
     * The event is "submitted" to each relevant current state set (taking indexing into account),
     * each such application resulting in a new set of states.
