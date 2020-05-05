@@ -1,6 +1,6 @@
 package daut29_abstraction
 
-import daut.Monitor
+import daut.MonitorAbs
 
 /**
   * Events: these represent behavior of spacecraft. A spacecraft can boot,
@@ -29,40 +29,13 @@ case class Boot(time1: Int, time2: Int) extends Event
 case class DoubleBoot(time1: Int, time2: Int) extends Event
 
 /**
-  * We create a special kind of monitor than can abstract events. The function
-  * `process` processes an event stream and produces a new event stream.
-  * The function `addAbstraction` can be used in a monitor to add events to
-  * the event stream. The function `process` takes a trace as argument.
-  * It calls `Monitor.verify(trace: List[Event])` which I added to Daut.
-  * See new version in github.
-  *
-  * Note that one could overwrite `verify` to call `addAbstraction` on every
-  * input event, such that the input trace would always be included in the
-  * output trace. I did not do that here.
-  */
-
-class Process[Event] extends Monitor[Event] {
-  var abstraction = new scala.collection.mutable.ListBuffer[Event]()
-
-  def addAbstraction(event: Event): Unit = {
-    abstraction += event
-  }
-
-  def process(events: List[Event]): List[Event] = {
-    verify(events)
-    println(abstraction)
-    abstraction.toList
-  }
-}
-
-/**
   * Process that abstracts boot starts and boot ends to boots.
   */
 
-class M1 extends Process[Event] {
+class M1 extends MonitorAbs[Event] {
   always {
     case BootStart(time1) => watch {
-      case BootEnd(time2) => addAbstraction(Boot(time1, time2))
+      case BootEnd(time2) => addAbs(Boot(time1, time2))
     }
   }
 }
@@ -71,10 +44,12 @@ class M1 extends Process[Event] {
   * Process that abstracts boots to double boots.
   */
 
-class M2 extends Process[Event] {
+class M2 extends MonitorAbs[Event] {
+  recording(true)
+
   always {
     case Boot(time1, _) => watch {
-      case Boot(_, time2) => addAbstraction(DoubleBoot(time1, time2))
+      case Boot(_, time2) => addAbs(DoubleBoot(time1, time2))
     }
   }
 }
@@ -83,9 +58,12 @@ class M2 extends Process[Event] {
   * Process that verifies double boots.
   */
 
-class M3 extends Process[Event] {
+class M3 extends MonitorAbs[Event] {
+  var count : Int  = 0
+
   always {
     case DoubleBoot(time1, _) =>
+      count += 1
       watch {
         case DoubleBoot(_, time2) =>
           ensure(time2 - time1 < 50)
@@ -99,10 +77,6 @@ class M3 extends Process[Event] {
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val m1 = new M1
-    val m2 = new M2
-    val m3 = new M3
-
     val trace0 = List(
       BootStart(10),
       BootEnd(20),
@@ -117,8 +91,14 @@ object Main {
       BootEnd(80)
     )
 
-    val trace1 = m1.process(trace0)
-    val trace2 = m2.process(trace1)
-    m3.process(trace2)
+    val m1 = new M1
+    val m2 = new M2
+    val m3 = new M3
+
+    val trace1 = m1.verifyAbs(trace0)
+    val trace2 = m2.verifyAbs(trace1)
+    m3.verify(trace2)
+    println(s"${trace2.mkString("\n")}")
+    println(s"${m3.count} double boots")
   }
 }

@@ -74,7 +74,8 @@ case class MonitorError() extends RuntimeException
   * @tparam E the type of events submitted to the monitor.
   */
 
-class Monitor[E] { thisMonitor =>
+class Monitor[E] {
+  thisMonitor =>
 
   /**
     * This class represents all the active states in a monitor (excluding those of its sub-monitors).
@@ -381,7 +382,7 @@ class Monitor[E] { thisMonitor =>
       * those of the monitor or those of the state.
       */
 
-    private var transitionsInitialized : Boolean = false
+    private var transitionsInitialized: Boolean = false
 
     /**
       * This variable is true for final (acceptance) states: that is states where it is
@@ -839,7 +840,7 @@ class Monitor[E] { thisMonitor =>
     * @return an anonymous unless-state.
     */
 
-  protected def unless(ts1: Transitions) : Object{def watch(ts2: Transitions) : state} = new {
+  protected def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
     def watch(ts2: Transitions) = new anonymous {
       unless(ts1) watch (ts2)
     }
@@ -858,7 +859,7 @@ class Monitor[E] { thisMonitor =>
     * @return an anonymous until-state.
     */
 
-  protected def until(ts1: Transitions) : Object{def watch(ts2: Transitions) : state} = new {
+  protected def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
     def watch(ts2: Transitions) = new anonymous {
       until(ts1) watch (ts2)
     }
@@ -1320,3 +1321,80 @@ class Monitor[E] { thisMonitor =>
   }
 }
 
+/**
+  * This monitor class provides methods for performing abstraction in addition
+  * to performing verification. The result of a verification is a new trace.
+  *
+  * @tparam E the type of events submitted to the monitor.
+  */
+
+class MonitorAbs[E] extends Monitor[E] {
+  /**
+    * Contains the abstraction being produced.
+    */
+
+  private var abstraction = new scala.collection.mutable.ListBuffer[E]()
+
+  /**
+    * If true all events consumed are copied to the abstraction.
+    */
+
+  private var recordingAll: Boolean = false
+
+  /**
+    * Determines whether all consumed events are copied to the abstraction trace.
+    *
+    * @param flag if true, consumed events are copied to the abstraction trace.
+    * @return the monitor itself.
+    */
+
+  def recording(flag: Boolean): MonitorAbs[E] = {
+    recordingAll = flag
+    this
+  }
+
+  /**
+    * Adds event to the abstraction trace.
+    *
+    * @param event event to be added to abstraction trace.
+    */
+
+  def addAbs(event: E): Unit = {
+    abstraction += event
+  }
+
+  /**
+    * Returns the produced abstraction.
+    *
+    * @return the abstraction.
+    */
+
+  def getAbs: List[E] = abstraction.toList
+
+  /**
+    * Verifies an event, first adding the event to the abstraction if
+    * `recording(true)` has been called. Calls `verify(event)` of the superclass.
+    *
+    * @param event the submitted event.
+    */
+
+  override def verify(event: E): Unit = {
+    if (recordingAll) addAbs(event)
+    super.verify(event)
+  }
+
+  /**
+    * Verifies a full trace of events. For each event `e` it calls `verify(e)`. It calls `end()`
+    * at the end of the trace (Calls `verify(events)` of the superclass. In addition, it
+    * returns the abstraction.
+    *
+    * @param events list (trace) of events to verify.
+    * @return the abstraction produced.
+    */
+
+  def verifyAbs(events: List[E]): List[E] = {
+    verify(events)
+    println(s"--- $abstraction")
+    abstraction.toList
+  }
+}
