@@ -1152,9 +1152,10 @@ class Monitor[E] {
     * at the end of the trace.
     *
     * @param events list (trace) of events to verify.
+    * @return this monitor (allowing method chaining).
     */
 
-  def verify(events: List[E]): Unit = {
+  def verify(events: List[E]): this.type = {
     for (event <- events) {
       verify(event)
     }
@@ -1171,9 +1172,10 @@ class Monitor[E] {
     * a key, which is used to fast-access the set of states relevant for the event.
     *
     * @param event the submitted event.
+    * @return this monitor (allowing method chaining).
     */
 
-  def verify(event: E): Unit = {
+  def verify(event: E): this.type = {
     if (initializing) initializing = false
     verifyBeforeEvent(event)
     if (monitorAtTop) debug("\n===[" + event + "]===\n")
@@ -1184,14 +1186,17 @@ class Monitor[E] {
     }
     if (monitorAtTop && DautOptions.DEBUG) printStates()
     verifyAfterEvent(event)
+    this
   }
 
   /**
     * Ends the monitoring, reporting on all remaining current non-final states.
     * These represent obligations that have not been fulfilled.
+    *
+    * @return this monitor (allowing method chaining).
     */
 
-  def end() {
+  def end() : this.type = {
     debug(s"Ending Daut trace evaluation for $monitorName")
     val theEndStates = states.getAllStates
     val hotStates = theEndStates filter (!_.isFinal)
@@ -1207,6 +1212,7 @@ class Monitor[E] {
     for (monitor <- monitors) {
       monitor.end()
     }
+    this
   }
 
   /**
@@ -1214,10 +1220,23 @@ class Monitor[E] {
     * This has the same meaning as the longer `M.verify(e)`.
     *
     * @param event the submitted event to be verified.
+    * @return this monitor (allowing method chaining).
     */
 
-  def apply(event: E): Unit = {
+  def apply(event: E): this.type = {
     verify(event)
+  }
+
+  /**
+    * Allows applying a monitor `M` to an event trace `t`, as follows: `M(t)`.
+    * This has the same meaning as the longer `M.verify(t)`.
+    *
+    * @param events list (trace) of events to verify.
+    * @return this monitor (allowing method chaining).
+    */
+
+  def apply(events: List[E]): this.type = {
+    verify(events)
   }
 
   /**
@@ -1328,7 +1347,7 @@ class Monitor[E] {
   * @tparam E the type of events submitted to the monitor.
   */
 
-class MonitorAbs[E] extends Monitor[E] {
+class Abstract[E] extends Monitor[E] {
   /**
     * Contains the abstraction being produced.
     */
@@ -1339,7 +1358,7 @@ class MonitorAbs[E] extends Monitor[E] {
     * If true all events consumed are copied to the abstraction.
     */
 
-  private var recordingAll: Boolean = false
+  private var recordAll: Boolean = false
 
   /**
     * Determines whether all consumed events are copied to the abstraction trace.
@@ -1348,8 +1367,8 @@ class MonitorAbs[E] extends Monitor[E] {
     * @return the monitor itself.
     */
 
-  def recording(flag: Boolean): MonitorAbs[E] = {
-    recordingAll = flag
+  def record(flag: Boolean): Abstract[E] = {
+    recordAll = flag
     this
   }
 
@@ -1359,7 +1378,7 @@ class MonitorAbs[E] extends Monitor[E] {
     * @param event event to be added to abstraction trace.
     */
 
-  def addAbs(event: E): Unit = {
+  def push(event: E): Unit = {
     abstraction += event
   }
 
@@ -1369,32 +1388,51 @@ class MonitorAbs[E] extends Monitor[E] {
     * @return the abstraction.
     */
 
-  def getAbs: List[E] = abstraction.toList
+  def trace: List[E] = abstraction.toList
 
   /**
     * Verifies an event, first adding the event to the abstraction if
     * `recording(true)` has been called. Calls `verify(event)` of the superclass.
     *
     * @param event the submitted event.
+    * @return this monitor (allowing method chaining).
     */
 
-  override def verify(event: E): Unit = {
-    if (recordingAll) addAbs(event)
+  override def verify(event: E): this.type = {
+    if (recordAll) push(event)
     super.verify(event)
+  }
+}
+
+/**
+  * This monitor class provides methods for performing abstraction in addition
+  * to performing verification. The result of a verification is a new trace.
+  *
+  * @tparam E the type of events submitted to the monitor.
+  */
+
+class Translate[E1,E2] extends Monitor[E1] {
+  /**
+    * Contains the abstraction being produced.
+    */
+
+  private var abstraction = new scala.collection.mutable.ListBuffer[E2]()
+
+    /**
+    * Adds event to the abstraction trace.
+    *
+    * @param event event to be added to abstraction trace.
+    */
+
+  def push(event: E2): Unit = {
+    abstraction += event
   }
 
   /**
-    * Verifies a full trace of events. For each event `e` it calls `verify(e)`. It calls `end()`
-    * at the end of the trace (Calls `verify(events)` of the superclass. In addition, it
-    * returns the abstraction.
+    * Returns the produced abstraction.
     *
-    * @param events list (trace) of events to verify.
-    * @return the abstraction produced.
+    * @return the abstraction.
     */
 
-  def verifyAbs(events: List[E]): List[E] = {
-    verify(events)
-    println(s"--- $abstraction")
-    abstraction.toList
-  }
+  def trace: List[E2] = abstraction.toList
 }
