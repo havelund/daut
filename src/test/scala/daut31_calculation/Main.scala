@@ -28,9 +28,9 @@ class IntervalTranslator(name: String,
 
 class IntervalMonitor(epsilon: Int) extends Monitor[Interval] {
   always {
-    case Interval(t1, t2) => watch {
-      case Interval(t3, t4) =>
-        ensure(t3 - t2 <= epsilon)
+    case Interval(_, end1) => watch {
+      case Interval(start2, _) =>
+        ensure(start2 - end1 <= epsilon)
     }
   }
 }
