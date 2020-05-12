@@ -16,11 +16,11 @@ class IntervalTranslator(name: String,
                          close: String,
                          p: Any => Boolean) extends Translate[Event, Interval] {
   always {
-    case value1 @ Value(t1, `name`, `open`, _) =>
+    case Value(t1, `name`, `open`, _) =>
       watch {
-        case value2 @ Value(_, nm, act, v) if !(nm == name && act == close) && !p(v) =>
+        case Value(_, nm, act, v) if !(nm == name && act == close) && !p(v) =>
           ok
-        case value3 @ Value(t2, `name`, `close`, _) =>
+        case Value(t2, `name`, `close`, _) =>
           push(Interval(t1, t2))
       }
   }
