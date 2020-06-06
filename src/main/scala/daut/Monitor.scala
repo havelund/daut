@@ -1,5 +1,7 @@
 package daut
 
+import scala.collection.mutable.{Map => MutMap}
+
 /**
   * Daut options to be set by the user.
   */
@@ -91,7 +93,7 @@ class Monitor[E] {
       */
 
     private var mainStates: Set[state] = Set()
-    private var indexedStates: Map[Any, Set[state]] = Map()
+    private val indexedStates: MutMap[Any, Set[state]] = MutMap()
 
     /**
       * Returns all states contained in the main set and in the indexed sets.
@@ -115,7 +117,7 @@ class Monitor[E] {
       * @return the set of indexes of indexed state sets.
       */
 
-    def getIndexes: Set[Any] = indexedStates.keySet
+    def getIndexes: Set[Any] = indexedStates.keySet.toSet
 
     /**
       * Get the set indexed by `index`.
