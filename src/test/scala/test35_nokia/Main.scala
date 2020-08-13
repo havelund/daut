@@ -4,7 +4,11 @@ import daut._
 import daut.Util.time
 
 /**
-  *
+  * The Ins_1_2 and Del_1_2 properties from the paper:
+  * Monitoring Usage-control Policies in Distributed Systems
+  * David Basin, Matus Harvan, Felix Klaedtke, and Eugen Zalinescu
+  * Proceedings of the International Workshop on Temporal Representation and Reasoning
+  * TIME 2011, pages 88 - 95.
   */
 
 trait Database
