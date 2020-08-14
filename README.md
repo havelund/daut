@@ -2,6 +2,8 @@
 
 Version 1.5.5
 
+Daut is programmed in [Scala](https://www.scala-lang.org) and developed on a Mac.
+
 ## Monitoring Data Streams with Data Automata
 
 Daut (Data automata) is an internal Scala DSL for writing event stream monitors. It
