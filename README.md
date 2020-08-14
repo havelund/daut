@@ -118,12 +118,6 @@ Compile as follows:
 scalac -cp $DAUT Main.scala 
 ```
 
-This will create a directory with compiled class files:
-
-```
-daut1_temporal
-```
-
 This creates a directory with the name: `daut1_temporal` containing the compiled class files.
 
 Now run the program as follows:
