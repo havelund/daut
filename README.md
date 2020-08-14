@@ -46,7 +46,7 @@ object Main {
 
 In the following, we shall illustrate the API by going through a collection of examples.
  
-## Installation with SBT
+## Installation with SBT (assumes knowledge of SBT and Scala)
 
 There are some options:
 
@@ -58,7 +58,7 @@ There are some options:
  
 ## Installation with jar file (command line use)
 
-You can also just download the jar file:
+Just download the jar file:
 
 ```
 https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar/daut.jar
@@ -66,46 +66,96 @@ https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar/daut.jar
 
 and compile and run examples as follows.
 
-Define the path to `daut.jar`:
+Define the path to `daut.jar` (here using bash export):
 
 ```
 export $DAUT=path/to/daut.jar
 ```
 
-Assume you now are in a directory where your monitor is in `Monitor.scala`. 
+The jar file is generated with Scala 2.13.3.
+
+Now let's compile a program. Go to `src/test/scala/daut1_temporal`.
+Here is a file `Main.scala` with the following contents:
 
 ```scala
-package some_name
+package daut1_temporal
 
-class Monitor {
-  ...
-  object Main {
-    def main(args: Array[String): Unit = { ...}
+import daut._
+
+/**
+ * Property AcquireRelease: A task acquiring a lock should eventually release it. At most one task
+ * can acquire a lock at a time.
+ */
+
+trait LockEvent
+case class acquire(t:Int, x:Int) extends LockEvent
+case class release(t:Int, x:Int) extends LockEvent
+
+class AcquireRelease extends Monitor[LockEvent] {
+  always {
+    case acquire(t, x) =>
+      hot {
+        case acquire(_,`x`) => error
+        case release(`t`,`x`) => ok
+      }
+  }
+}
+
+object Main {
+  def main(args: Array[String]) {
+    DautOptions.DEBUG = true
+    val m = new AcquireRelease
+    m.verify(acquire(1, 10))
+    m.verify(release(1, 10))
+    m.end()
   }
 }
 ```
 
-Compile the monitor as follows:
+Compile as follows:
 
 ```
-scalac -cp $PATH_DAUT/daut.jar Monitor.scala 
+scalac -cp $DAUT Main.scala 
 ```
 
 This will create a directory with compiled class files:
 
 ```
-some_name
+daut1_temporal
 ```
+
+This creates a directory with the name: `daut1_temporal` containing the compiled class files.
 
 Now run the program as follows:
 
 ```
-scala -cp .:$PATH_DAUT/daut.jar some_name.Main
+scala -cp .:$DAUT daut1_temporal.Main
 ``` 
  
-If you are not a Scala or Java programmer this may look a bit cryptic,
-and I can only agree. 
+This should generate the output:
 
+```
+===[acquire(1,10)]===
+
+--- AcquireRelease:
+[memory] 
+  hot
+  always
+
+
+
+===[release(1,10)]===
+
+--- AcquireRelease:
+[memory] 
+  always
+
+
+Ending Daut trace evaluation for AcquireRelease
+``` 
+ 
+Some debugging information and no errors detected. The trace satisfies the specification.
+  
 Note: in Scala you indicate an "object" to run, in this case the object named `Main`. It must contain a `main` method. There can be
 several such objects in a file, `Main1`, `Main2`, each containing
 a `main` method. One picks which to execute in the above commmand.
