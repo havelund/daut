@@ -61,13 +61,18 @@ There are some options:
 You can also just download the jar file:
 
 ```
-https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar
+https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar/daut.jar
 ``` 
 
 and compile and run examples as follows.
 
-Assume that your `daut.jar` file is stored at `$PATH_DAUT/daut.jar`,
-and assume that your monitor is in `Monitor.scala`. 
+Define the path to `daut.jar`:
+
+```
+export $DAUT=path/to/daut.jar
+```
+
+Assume you now are in a directory where your monitor is in `Monitor.scala`. 
 
 ```scala
 package some_name
