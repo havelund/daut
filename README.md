@@ -46,7 +46,7 @@ object Main {
 
 In the following, we shall illustrate the API by going through a collection of examples.
  
-## Installation
+## Installation with SBT
 
 There are some options:
 
@@ -55,6 +55,55 @@ There are some options:
 - The main file is: [src/main/scala/daut/Monitor.scala](src/main/scala/daut/Monitor.scala). This source can alternatively be incorporated into your own project, fitting your own way of working, and you are up and running. One file is simplicity.
 
 - You may use an IDE, such as IntelliJ or Eclipse. IntelliJ can load the project in SBT mode.
+ 
+## Installation with jar file (command line use)
+
+You can also just download the jar file:
+
+```
+https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar
+``` 
+
+and compile and run examples as follows.
+
+Assume that your `daut.jar` file is stored at `$PATH_DAUT/daut.jar`,
+and assume that your monitor is in `Monitor.scala`. 
+
+```scala
+package some_name
+
+class Monitor {
+  ...
+  object Main {
+    def main(args: Array[String): Unit = { ...}
+  }
+}
+```
+
+Compile the monitor as follows:
+
+```
+scalac -cp $PATH_DAUT/daut.jar Monitor.scala 
+```
+
+This will create a directory with compiled class files:
+
+```
+some_name
+```
+
+Now run the program as follows:
+
+```
+scala -cp .:$PATH_DAUT/daut.jar some_name.Main
+``` 
+ 
+If you are not a Scala or Java programmer this may look a bit cryptic,
+and I can only agree. 
+
+Note: in Scala you indicate an "object" to run, in this case the object named `Main`. It must contain a `main` method. There can be
+several such objects in a file, `Main1`, `Main2`, each containing
+a `main` method. One picks which to execute in the above commmand.
  
 ## Basic Example
 
