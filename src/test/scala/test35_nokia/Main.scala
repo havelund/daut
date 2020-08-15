@@ -296,18 +296,16 @@ class LogReader(fileName: String) {
     breakable {
       while (reader.hasNext) {
         val line = reader.next().asInstanceOf[List[String]]
-        if ((lineNr % PRINT_EACH) == 0) println(lineNr / PRINT_EACH)
         lineNr += 1
+        if ((lineNr % PRINT_EACH) == 0) println(lineNr / PRINT_EACH)
         val name = line(0)
         if (name == INSERT || name == DELETE) {
           val dataMap = getData(line)
           val db = dataMap("db")
-          if (db != "db1" || db != "db2")  {
+          if (db == "db1" || db == "db2")  {
             val time = dataMap("ts").toLong
             val user = dataMap("u")
-            val database = {
-              if (dataMap("db") == "db1") Db1 else Db2
-            }
+            val database = if (dataMap("db") == "db1") Db1 else Db2
             val data = dataMap("d")
             name match {
               case INSERT =>
@@ -315,6 +313,7 @@ class LogReader(fileName: String) {
               case DELETE =>
                 event = Some(Delete(time, user, database, data))
             }
+            break
           }
         }
       }
@@ -325,7 +324,7 @@ class LogReader(fileName: String) {
 
 object VerifyNokiaLog {
   def main(args: Array[String]): Unit = {
-    val csvFile = new LogReader("......./ldcc.csv")
+    val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
     val monitor = new NokiaMonitors
     Util.time ("Analysis of ldcc.csv") {
       while (csvFile.hasNext) {
