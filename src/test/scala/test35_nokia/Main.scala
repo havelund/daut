@@ -2,6 +2,8 @@ package test35_nokia
 
 import daut._
 import daut.Util.time
+import com.github.tototoshi.csv._
+import util.control.Breaks._
 
 /**
   * The Ins_1_2 and Del_1_2 properties from the paper:
@@ -20,12 +22,12 @@ case object Db2 extends Database
 case object Db3 extends Database
 
 trait Event {
-  val time: Int
+  val time: Long
 }
 
-case class Insert(time: Int, user: String, db: Database, data: String) extends Event
+case class Insert(time: Long, user: String, db: Database, data: String) extends Event
 
-case class Delete(time: Int, user: String, db: Database, data: String) extends Event
+case class Delete(time: Long, user: String, db: Database, data: String) extends Event
 
 class NokiaMonitor extends Monitor[Event] {
   override def keyOf(event: Event): Option[String] = {
@@ -38,7 +40,7 @@ class NokiaMonitor extends Monitor[Event] {
 
 class Ins_1_2 extends NokiaMonitor {
 
-  case class InsDb2_or_DelDb1(time: Int, data: String) extends fact {
+  case class InsDb2_or_DelDb1(time: Long, data: String) extends fact {
     watch {
       case event if event.time - time > 1 => ok
     }
@@ -59,13 +61,13 @@ class Ins_1_2 extends NokiaMonitor {
 
 class Del_1_2 extends NokiaMonitor {
 
-  case class Del(time: Int, db: Database, data: String) extends fact {
+  case class Del(time: Long, db: Database, data: String) extends fact {
     watch {
       case event if event.time - time > 1 => ok
     }
   }
 
-  case class Ins(time: Int, db: Database, data: String) extends fact {
+  case class Ins(time: Long, db: Database, data: String) extends fact {
     watch {
       case event if event.time - time > 108000 => ok
     }
@@ -99,11 +101,15 @@ class Del_1_2 extends NokiaMonitor {
   }
 }
 
+class NokiaMonitors extends Monitor[Event] {
+  monitor(new Ins_1_2, new Del_1_2)
+}
+
 /**
   * Testing Ins_1_2
   */
 
-object Main1 {
+object Test_Ins_1_2 {
   def main(args: Array[String]) {
     DautOptions.DEBUG = true
     val m = new Ins_1_2
@@ -173,7 +179,7 @@ object Main1 {
   * Testing Del_1_2
   */
 
-object Main2 {
+object Test_Del_1_2 {
   def main(args: Array[String]) {
     DautOptions.DEBUG = true
     val m = new Del_1_2
@@ -258,3 +264,82 @@ object Main2 {
     m.end()
   }
 }
+
+/**
+  * Analyzing Nokia log.
+  */
+
+class LogReader(fileName: String) {
+  val reader = CSVReader.open(fileName).iterator
+
+  val INSERT = "insert"
+  val DELETE = "delete"
+  val PRINT_EACH = 1000000
+
+  var lineNr: Long = 0
+
+  def getData(line: List[String]) : Map[String,String] = {
+    var map : Map[String,String] = Map()
+    for (element <- line.tail) {
+      val src_rng = element.split("=").map(_.trim())
+      map += (src_rng(0) -> src_rng(1))
+    }
+    map
+  }
+
+  // command, tp = 83119, ts = 1277736981,  u = user8,      db = db3, p = [unknown],  d = [unknown]
+
+  def hasNext: Boolean = reader.hasNext
+
+  def next: Option[Event] = {
+    var event: Option[Event] = None
+    breakable {
+      while (reader.hasNext) {
+        val line = reader.next().asInstanceOf[List[String]]
+        if ((lineNr % PRINT_EACH) == 0) println(lineNr / PRINT_EACH)
+        lineNr += 1
+        val name = line(0)
+        if (name == INSERT || name == DELETE) {
+          val dataMap = getData(line)
+          val db = dataMap("db")
+          if (db != "db1" || db != "db2")  {
+            val time = dataMap("ts").toLong
+            val user = dataMap("u")
+            val database = {
+              if (dataMap("db") == "db1") Db1 else Db2
+            }
+            val data = dataMap("d")
+            name match {
+              case INSERT =>
+                event = Some(Insert(time, user, database, data))
+              case DELETE =>
+                event = Some(Delete(time, user, database, data))
+            }
+          }
+        }
+      }
+    }
+    event
+  }
+}
+
+object VerifyNokiaLog {
+  def main(args: Array[String]): Unit = {
+    val csvFile = new LogReader("......./ldcc.csv")
+    val monitor = new NokiaMonitors
+    Util.time ("Analysis of ldcc.csv") {
+      while (csvFile.hasNext) {
+        csvFile.next match {
+          case Some(event) =>
+            monitor.verify(event)
+          case None =>
+            println("done - pew!")
+        }
+      }
+      monitor.end()
+      println(s"${csvFile.lineNr} lines processed")
+    }
+  }
+}
+
+
