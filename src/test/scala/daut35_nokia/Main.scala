@@ -1,4 +1,4 @@
-package test35_nokia
+package daut35_nokia
 
 import daut._
 import daut.Util.time

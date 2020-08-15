@@ -1,4 +1,4 @@
-package test34_generic
+package daut34_generic
 
 import daut._
 
