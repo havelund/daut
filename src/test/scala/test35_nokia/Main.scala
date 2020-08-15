@@ -274,7 +274,7 @@ class LogReader(fileName: String) {
 
   val INSERT = "insert"
   val DELETE = "delete"
-  val PRINT_EACH = 1000000
+  val PRINT_EACH = 1
 
   var lineNr: Long = 0
 
@@ -330,6 +330,7 @@ object VerifyNokiaLog {
       while (csvFile.hasNext) {
         csvFile.next match {
           case Some(event) =>
+            println(event)
             monitor.verify(event)
           case None =>
             println("done - pew!")
