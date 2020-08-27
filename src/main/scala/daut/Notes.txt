@@ -152,24 +152,13 @@ class Monitor[E] {
       val key = keyOf(event)
       key match {
         case None =>
-          applyEventToStateSet(event)(mainStates) match {
-            case None =>
-            case Some(newStates) => mainStates = newStates
-          }
+          mainStates = applyEventToStateSet(event)(mainStates)
           for ((index, ss) <- indexedStates) {
-            applyEventToStateSet(event)(ss) match {
-              case None =>
-              case Some(newStates) =>
-                indexedStates += (index -> newStates)
-            }
+            indexedStates += (index -> applyEventToStateSet(event)(ss))
           }
         case Some(index) =>
           val ss = indexedStates.getOrElse(index, mainStates)
-          applyEventToStateSet(event)(ss) match {
-            case None =>
-            case Some(newStates) =>
-              indexedStates += (index -> newStates)
-          }
+          indexedStates += (index -> applyEventToStateSet(event)(ss))
       }
     }
 
@@ -179,19 +168,16 @@ class Monitor[E] {
       *
       * @param event  the event.
       * @param states the set of states to apply the event to.
-      * @return `Some` of set new states or `None` if no transitions triggered.
       */
 
-    private def applyEventToStateSet(event: E)(states: Set[state]): Option[Set[state]] = {
-      var transitionTriggered : Boolean = false
+    private def applyEventToStateSet(event: E)(states: Set[state]): Set[state] = {
       var statesToRemove: Set[state] = emptyStateSet
       var statesToAdd: Set[state] = emptyStateSet
-      var newStates = states
-      for (sourceState <- newStates) {
+      var theStates = states
+      for (sourceState <- theStates) {
         sourceState(event) match {
           case None =>
           case Some(targetStates) =>
-            transitionTriggered = true
             statesToRemove += sourceState
             for (targetState <- targetStates) {
               targetState match {
@@ -203,12 +189,9 @@ class Monitor[E] {
             }
         }
       }
-      if (transitionTriggered) {
-        newStates --= statesToRemove
-        newStates ++= statesToAdd
-        Some(newStates)
-      } else
-        None
+      theStates --= statesToRemove
+      theStates ++= statesToAdd
+      theStates
     }
   }
 

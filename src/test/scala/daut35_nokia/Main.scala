@@ -19,8 +19,6 @@ case object Db1 extends Database
 
 case object Db2 extends Database
 
-case object Db3 extends Database
-
 trait Event {
   val time: Long
 }
@@ -30,19 +28,22 @@ case class Insert(time: Long, user: String, db: Database, data: String) extends 
 case class Delete(time: Long, user: String, db: Database, data: String) extends Event
 
 class NokiaMonitor extends Monitor[Event] {
-  override def keyOf(event: Event): Option[String] = {
-    event match {
-      case Insert(_, _, _, data) => Some(data)
-      case Delete(_, _, _, data) => Some(data)
-    }
-  }
+//  override def keyOf(event: Event): Option[String] = {
+//    event match {
+//      case Insert(_, _, _, data) => Some(data)
+//      case Delete(_, _, _, data) => Some(data)
+//    }
+//  }
 }
 
 class Ins_1_2 extends NokiaMonitor {
 
+  val hours_30 = 108000
+  val seconds_1 = 1
+
   case class InsDb2_or_DelDb1(time: Long, data: String) extends fact {
     watch {
-      case event if event.time - time > 1 => ok
+      case event if event.time - time > seconds_1 => ok
     }
   }
 
@@ -52,7 +53,7 @@ class Ins_1_2 extends NokiaMonitor {
     case Insert(time, _, Db1, data) if data != "[unknown]" =>
       if (exists { case InsDb2_or_DelDb1(`time`, `data`) => true }) ok else
         hot {
-          case event if event.time - time > 108000 => error
+          case event if event.time - time > hours_30 => error
           case Insert(_, _, Db2, `data`) => ok
           case Delete(_, _, Db1, `data`) => ok
         }
@@ -274,7 +275,7 @@ class LogReader(fileName: String) {
 
   val INSERT = "insert"
   val DELETE = "delete"
-  val PRINT_EACH = 1
+  var PRINT_EACH = 1000
 
   var lineNr: Long = 0
 
@@ -298,6 +299,10 @@ class LogReader(fileName: String) {
         val line = reader.next().asInstanceOf[List[String]]
         lineNr += 1
         if ((lineNr % PRINT_EACH) == 0) println(lineNr / PRINT_EACH)
+//        if (lineNr == 23185000) {
+//          PRINT_EACH = 1
+//          DautOptions.DEBUG = true
+//        }
         val name = line(0)
         if (name == INSERT || name == DELETE) {
           val dataMap = getData(line)
@@ -323,14 +328,18 @@ class LogReader(fileName: String) {
 }
 
 object VerifyNokiaLog {
+  val EVERY = 500000
+
   def main(args: Array[String]): Unit = {
     val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
-    val monitor = new NokiaMonitors
+    // val monitor = new NokiaMonitors
+    val monitor = new Ins_1_2
     Util.time ("Analysis of ldcc.csv") {
       while (csvFile.hasNext) {
         csvFile.next match {
           case Some(event) =>
-            println(event)
+            // println(s"$event @ ${csvFile.lineNr}")
+            // if (csvFile.lineNr == 23000000) DautOptions.DEBUG = true
             monitor.verify(event)
           case None =>
             println("done - pew!")
