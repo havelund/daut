@@ -105,13 +105,13 @@ class History(resetBound: Int, timeLimit: Long, db: String) {
   def put(data: String, time : Long) : Unit = {
     counter += 1
     if (counter == resetBound) {
-      println(s"----- $db")
+      // println(s"----- $db")
       counter = 0
-      println(map.size)
+      // println(map.size)
       map.filterInPlace {
         case (_,time0) => time - time0 <= timeLimit
       }
-      println(map.size)
+      // println(map.size)
     }
     map.put(data, time)
   }
@@ -382,27 +382,19 @@ class LogReader(fileName: String) {
 object VerifyNokiaLog {
   def main(args: Array[String]): Unit = {
     val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
-    var badEvents: List[Long] = Nil
-    val monitor = new Del_1_2_coded {
-      override def callBack(): Unit = {
-        badEvents ::= csvFile.lineNr
-      }
-    }
+    // val monitor = new Ins_1_2
+    val monitor = new Del_1_2_coded
     Util.time ("Analysis of ldcc.csv") {
       while (csvFile.hasNext) {
         csvFile.next match {
           case Some(event) =>
-            monitor.verify(event)
+            monitor.verify(event, csvFile.lineNr)
           case None =>
             println("done - pew!")
         }
       }
       monitor.end()
       println(s"${csvFile.lineNr} lines processed")
-      if (badEvents.length > 0) {
-        println("\n*** Errors detected for the following event numbers:\n")
-        badEvents.reverse.foreach(println)
-      }
     }
   }
 }

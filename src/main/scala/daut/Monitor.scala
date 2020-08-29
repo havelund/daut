@@ -17,11 +17,11 @@ object DautOptions {
   /**
     * When true will cause a big ERROR banner to be printed
     * on standard out upon detection of a specification violation, making it easier
-    * to quickly see that an error occurred amongst other output.
-    * The default value is true.
+    * to quickly see that an error occurred amongst other large output.
+    * The default value is false.
     */
 
-  var PRINT_ERROR_BANNER = true
+  var PRINT_ERROR_BANNER = false
 }
 
 /**
@@ -195,7 +195,7 @@ class Monitor[E] {
             statesToRemove += sourceState
             for (targetState <- targetStates) {
               targetState match {
-                case `error` => reportError()
+                case `error` => reportErrorOnEvent(event)
                 case `ok` =>
                 case `stay` => statesToAdd += sourceState
                 case _ => statesToAdd += targetState
@@ -237,10 +237,6 @@ class Monitor[E] {
 
   private val monitorName = this.getClass.getSimpleName
 
-  println("=====")
-  println(monitorName)
-  println("=====")
-
   /**
     * A monitor can contain sub-monitors in a hierarchical manner. Any event submitted to the monitor will
     * also be submitted to the sub-monitors. This allows for better organization of many monitors. The effect,
@@ -279,6 +275,12 @@ class Monitor[E] {
     */
 
   private var errorCount = 0
+
+  /**
+    * Number of event currently verified. First event gets number 1.
+    */
+
+  private var eventNumber : Long = 0
 
   /**
     * Option, which when set to true will cause monitoring to stop the first time
@@ -1195,10 +1197,19 @@ class Monitor[E] {
     * a key, which is used to fast-access the set of states relevant for the event.
     *
     * @param event the submitted event.
+    * @param eventNr number of event being verified. If 0 use internal counter.
+    *                Passing this as argument is used when the event stream is filtered
+    *                before events get passed to this function, and we want the
+    *                original positions used in error messages.
     * @return this monitor (allowing method chaining).
     */
 
-  def verify(event: E): this.type = {
+  def verify(event: E, eventNr : Long = 0): this.type = {
+    if (eventNr > 0) {
+      eventNumber = eventNr
+    } else {
+      eventNumber += 1
+    }
     if (initializing) initializing = false
     verifyBeforeEvent(event)
     if (monitorAtTop) debug("\n===[" + event + "]===\n")
@@ -1323,12 +1334,25 @@ class Monitor[E] {
   }
 
   /**
+    * Prints our event and then calls `reportError()`.
+    *
+    * @param event
+    */
+
+  protected def reportErrorOnEvent(event : E) : Unit = {
+    println(s"\n*** event: $event ")
+    reportError()
+  }
+
+  /**
     * Prints a very visible ERROR banner, in case `PRINT_ERROR_BANNER` is true.
     * Updates error count.
     */
 
   protected def reportError() {
     errorCount += 1
+    println(s"$monitorName error # $errorCount event # $eventNumber")
+    callBack()
     if (DautOptions.PRINT_ERROR_BANNER) {
       println(
         s"""
@@ -1339,10 +1363,8 @@ class Monitor[E] {
            |███████╗██║  ██║██║  ██║╚██████╔╝██║  ██║
            |╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
            |
-           |$monitorName error # $errorCount
         """.stripMargin)
     }
-    callBack()
     if (STOP_ON_ERROR) {
       println("\n*** terminating on first error!\n")
       throw MonitorError()
@@ -1419,10 +1441,11 @@ class Abstract[E] extends Monitor[E] {
     * `recording(true)` has been called. Calls `verify(event)` of the superclass.
     *
     * @param event the submitted event.
+    * @param eventNr number of event is counted externally.
     * @return this monitor (allowing method chaining).
     */
 
-  override def verify(event: E): this.type = {
+  override def verify(event: E, eventNr: Long = 0): this.type = {
     if (recordAll) push(event)
     super.verify(event)
   }
