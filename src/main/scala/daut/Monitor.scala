@@ -183,7 +183,7 @@ class Monitor[E] {
       */
 
     private def applyEventToStateSet(event: E)(states: Set[state]): Option[Set[state]] = {
-      var transitionTriggered : Boolean = false
+      var transitionTriggered: Boolean = false
       var statesToRemove: Set[state] = emptyStateSet
       var statesToAdd: Set[state] = emptyStateSet
       var newStates = states
@@ -235,7 +235,11 @@ class Monitor[E] {
     * The name of the monitor, derived from its class name.
     */
 
-  private val monitorName = this.getClass().getSimpleName()
+  private val monitorName = this.getClass.getSimpleName
+
+  println("=====")
+  println(monitorName)
+  println("=====")
 
   /**
     * A monitor can contain sub-monitors in a hierarchical manner. Any event submitted to the monitor will
@@ -1215,7 +1219,7 @@ class Monitor[E] {
     * @return this monitor (allowing method chaining).
     */
 
-  def end() : this.type = {
+  def end(): this.type = {
     debug(s"Ending Daut trace evaluation for $monitorName")
     val theEndStates = states.getAllStates
     val hotStates = theEndStates filter (!_.isFinal)
@@ -1231,6 +1235,7 @@ class Monitor[E] {
     for (monitor <- monitors) {
       monitor.end()
     }
+    println(s"Monitor $monitorName detected $errorCount errors!")
     this
   }
 
@@ -1430,14 +1435,14 @@ class Abstract[E] extends Monitor[E] {
   * @tparam E the type of events submitted to the monitor.
   */
 
-class Translate[E1,E2] extends Monitor[E1] {
+class Translate[E1, E2] extends Monitor[E1] {
   /**
     * Contains the abstraction being produced.
     */
 
   private var abstraction = new scala.collection.mutable.ListBuffer[E2]()
 
-    /**
+  /**
     * Adds event to the abstraction trace.
     *
     * @param event event to be added to abstraction trace.

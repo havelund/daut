@@ -1,7 +1,6 @@
 package daut35_nokia
 
 import daut._
-import daut.Util.time
 import com.github.tototoshi.csv._
 import util.control.Breaks._
 
@@ -27,16 +26,7 @@ case class Insert(time: Long, user: String, db: Database, data: String) extends 
 
 case class Delete(time: Long, user: String, db: Database, data: String) extends Event
 
-class NokiaMonitor extends Monitor[Event] {
-//  override def keyOf(event: Event): Option[String] = {
-//    event match {
-//      case Insert(_, _, _, data) => Some(data)
-//      case Delete(_, _, _, data) => Some(data)
-//    }
-//  }
-}
-
-class Ins_1_2 extends NokiaMonitor {
+class Ins_1_2 extends Monitor[Event]  {
 
   val hours_30 = 108000
   val seconds_1 = 1
@@ -48,8 +38,9 @@ class Ins_1_2 extends NokiaMonitor {
   }
 
   always {
-    case Insert(time, _, Db2, data) => InsDb2_or_DelDb1(time, data)
     case Delete(time, _, Db1, data) => InsDb2_or_DelDb1(time, data)
+    case Insert(time, _, Db2, data) => InsDb2_or_DelDb1(time, data)
+
     case Insert(time, _, Db1, data) if data != "[unknown]" =>
       if (exists { case InsDb2_or_DelDb1(`time`, `data`) => true }) ok else
         hot {
@@ -60,17 +51,20 @@ class Ins_1_2 extends NokiaMonitor {
   }
 }
 
-class Del_1_2 extends NokiaMonitor {
+class Del_1_2 extends Monitor[Event] {
+
+  val hours_30 = 108000
+  val seconds_1 = 1
 
   case class Del(time: Long, db: Database, data: String) extends fact {
     watch {
-      case event if event.time - time > 1 => ok
+      case event if event.time - time > seconds_1 => ok
     }
   }
 
   case class Ins(time: Long, db: Database, data: String) extends fact {
     watch {
-      case event if event.time - time > 108000 => ok
+      case event if event.time - time > hours_30 => ok
     }
   }
 
@@ -80,21 +74,21 @@ class Del_1_2 extends NokiaMonitor {
 
     case Delete(time, _, Db1, data) if data != "[unknown]" =>
       if (exists { case Del(`time`, Db2, `data`) => true }) ok else {
-        val s1 = if (exists { case Ins(time0, Db1, `data`) => time - time0 <= 108000 }) ok else
+        val s1 = if (exists { case Ins(time0, Db1, `data`) => time - time0 <= hours_30 }) ok else
           hot {
-            case event if event.time - time > 108000 => error
-            case Delete(time1, _, Db2, `data`) if time1 - time <= 108000 => ok
+            case event if event.time - time > hours_30 => error
+            case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
             case Insert(`time`, _, Db1, `data`) => ok
           }
-        val s2 = if (exists { case Ins(time0, Db2, `data`) => time - time0 <= 108000 }) hot {
-          case event if event.time - time > 108000 => error
-          case Delete(time1, _, Db2, `data`) if time1 - time <= 108000 => ok
+        val s2 = if (exists { case Ins(time0, Db2, `data`) => time - time0 <= hours_30 }) hot {
+          case event if event.time - time > hours_30 => error
+          case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
         } else hot {
-          case event if event.time - time > 108000 => ok
-          case Delete(time1, _, Db2, `data`) if time1 - time <= 108000 => ok
-          case Insert(time1, _, Db2, `data`) if time1 - time <= 108000 => hot {
-            case event if event.time - time > 108000 => error
-            case Delete(time1, _, Db2, `data`) if time1 - time <= 108000 => ok
+          case event if event.time - time > hours_30 => ok
+          case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
+          case Insert(time1, _, Db2, `data`) if time1 - time <= hours_30 => hot {
+            case event if event.time - time > hours_30 => error
+            case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
           }
         }
         (s1, s2)
@@ -102,8 +96,74 @@ class Del_1_2 extends NokiaMonitor {
   }
 }
 
-class NokiaMonitors extends Monitor[Event] {
-  monitor(new Ins_1_2, new Del_1_2)
+class History(resetBound: Int, timeLimit: Long, db: String) {
+  val map = collection.mutable.Map[String, Long]()
+  var counter : Int = 0
+
+  def get(data: String): Option[Long] = map.get(data)
+
+  def put(data: String, time : Long) : Unit = {
+    counter += 1
+    if (counter == resetBound) {
+      println(s"----- $db")
+      counter = 0
+      println(map.size)
+      map.filterInPlace {
+        case (_,time0) => time - time0 <= timeLimit
+      }
+      println(map.size)
+    }
+    map.put(data, time)
+  }
+
+  def withinTimeLimit(data: String, now: Long): Boolean = {
+    get(data) match {
+      case None => false
+      case Some(time) => now - time <= timeLimit
+    }
+  }
+}
+
+class Del_1_2_coded extends Monitor[Event] {
+  val hours_30 = 108000
+  val seconds_1 = 1
+  val seconds_0 = 0
+
+  val insertedDb1 = new History(500000, hours_30, "insertedDb1")
+  val insertedDb2 = new History(500000, hours_30, "insertedDb2")
+  val deletedDb2 = new History(500000, seconds_0, "deletedDb2")
+
+  always {
+    case Insert(time, _, Db1, data) => insertedDb1.put(data, time)
+    case Insert(time, _, Db2, data) => insertedDb2.put(data, time)
+    case Delete(time, _, Db2, data) => deletedDb2.put(data,time)
+
+    case Delete(time, _, Db1, data) if data != "[unknown]" =>
+      if (deletedDb2.withinTimeLimit(data, time)) ok else {
+        val s1 = if (insertedDb1.withinTimeLimit(data, time) ) ok else
+          hot {
+            case event if event.time - time > hours_30 => error
+            case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
+            case Insert(`time`, _, Db1, `data`) => ok
+          }
+        val s2 = if (insertedDb2.withinTimeLimit(data, time)) hot {
+          case event if event.time - time > hours_30 => error
+          case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
+        } else hot {
+          case event if event.time - time > hours_30 => ok
+          case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
+          case Insert(time1, _, Db2, `data`) if time1 - time <= hours_30 => hot {
+            case event if event.time - time > hours_30 => error
+            case Delete(time1, _, Db2, `data`) if time1 - time <= hours_30 => ok
+          }
+        }
+        (s1, s2)
+      }
+  }
+}
+
+class BothMonitors extends Monitor[Event] {
+  monitor(new Ins_1_2, new Del_1_2_coded)
 }
 
 /**
@@ -172,7 +232,6 @@ object Test_Ins_1_2 {
       */
 
     m.verify(errTrace2)
-    m.end()
   }
 }
 
@@ -183,7 +242,7 @@ object Test_Ins_1_2 {
 object Test_Del_1_2 {
   def main(args: Array[String]) {
     DautOptions.DEBUG = true
-    val m = new Del_1_2
+    val m = new Del_1_2_coded
 
     /**
       * Correct Traces:
@@ -250,7 +309,7 @@ object Test_Del_1_2 {
 
     // error trace, db1 insertion in next step but db2 insertion in past or future
 
-    val errTrace5: List[Event] = List(
+    val errTrace4: List[Event] = List(
       Insert(100000, "user4", Db2, "data1000"),
       Delete(500000, "user1", Db1, "data1000"), // <-- trigger
       Insert(500000, "user2", Db1, "data1000"),
@@ -261,8 +320,7 @@ object Test_Del_1_2 {
       * Verify:
       */
 
-    m.verify(errTrace5)
-    m.end()
+    m.verify(errTrace4)
   }
 }
 
@@ -275,7 +333,7 @@ class LogReader(fileName: String) {
 
   val INSERT = "insert"
   val DELETE = "delete"
-  var PRINT_EACH = 1000
+  var PRINT_EACH = 1000000
 
   var lineNr: Long = 0
 
@@ -288,8 +346,6 @@ class LogReader(fileName: String) {
     map
   }
 
-  // command, tp = 83119, ts = 1277736981,  u = user8,      db = db3, p = [unknown],  d = [unknown]
-
   def hasNext: Boolean = reader.hasNext
 
   def next: Option[Event] = {
@@ -299,10 +355,6 @@ class LogReader(fileName: String) {
         val line = reader.next().asInstanceOf[List[String]]
         lineNr += 1
         if ((lineNr % PRINT_EACH) == 0) println(lineNr / PRINT_EACH)
-//        if (lineNr == 23185000) {
-//          PRINT_EACH = 1
-//          DautOptions.DEBUG = true
-//        }
         val name = line(0)
         if (name == INSERT || name == DELETE) {
           val dataMap = getData(line)
@@ -328,18 +380,18 @@ class LogReader(fileName: String) {
 }
 
 object VerifyNokiaLog {
-  val EVERY = 500000
-
   def main(args: Array[String]): Unit = {
     val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
-    // val monitor = new NokiaMonitors
-    val monitor = new Ins_1_2
+    var badEvents: List[Long] = Nil
+    val monitor = new Del_1_2_coded {
+      override def callBack(): Unit = {
+        badEvents ::= csvFile.lineNr
+      }
+    }
     Util.time ("Analysis of ldcc.csv") {
       while (csvFile.hasNext) {
         csvFile.next match {
           case Some(event) =>
-            // println(s"$event @ ${csvFile.lineNr}")
-            // if (csvFile.lineNr == 23000000) DautOptions.DEBUG = true
             monitor.verify(event)
           case None =>
             println("done - pew!")
@@ -347,8 +399,10 @@ object VerifyNokiaLog {
       }
       monitor.end()
       println(s"${csvFile.lineNr} lines processed")
+      if (badEvents.length > 0) {
+        println("\n*** Errors detected for the following event numbers:\n")
+        badEvents.reverse.foreach(println)
+      }
     }
   }
 }
-
-
