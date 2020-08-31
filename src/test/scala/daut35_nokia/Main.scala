@@ -382,8 +382,8 @@ class LogReader(fileName: String) {
 object VerifyNokiaLog {
   def main(args: Array[String]): Unit = {
     val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
-    // val monitor = new Ins_1_2
-    val monitor = new Del_1_2_coded
+    val monitor = new Ins_1_2
+    // val monitor = new Del_1_2_coded
     Util.time ("Analysis of ldcc.csv") {
       while (csvFile.hasNext) {
         csvFile.next match {
