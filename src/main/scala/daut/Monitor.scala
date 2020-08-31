@@ -80,6 +80,16 @@ class Monitor[E] {
   thisMonitor =>
 
   /**
+    * Used to record the initial event that causes a monitor state to track a behavior.
+    * Is printed out when an error is detected.
+    *
+    * @param eventNr number of event.
+    * @param event the event.
+    */
+
+  case class InitialEvent(eventNr: Long, event: E)
+
+  /**
     * This class represents all the active states in a monitor (excluding those of its sub-monitors).
     */
 
@@ -195,8 +205,7 @@ class Monitor[E] {
             statesToRemove += sourceState
             for (targetState <- targetStates) {
               targetState match {
-                case `error` => reportErrorOnEvent(event)
-                case `ok` =>
+                case `error` | `ok` =>
                 case `stay` => statesToAdd += sourceState
                 case _ => statesToAdd += targetState
               }
@@ -280,7 +289,7 @@ class Monitor[E] {
     * Number of event currently verified. First event gets number 1.
     */
 
-  private var eventNumber : Long = 0
+  private var eventNumber: Long = 0
 
   /**
     * Option, which when set to true will cause monitoring to stop the first time
@@ -410,12 +419,26 @@ class Monitor[E] {
     private var transitionsInitialized: Boolean = false
 
     /**
+      * This variable is true for initial states.
+      */
+
+    private[daut] var isInitial: Boolean = false
+
+    /**
       * This variable is true for final (acceptance) states: that is states where it is
       * acceptable to end up when the `end()` method is called. This corresponds to
       * acceptance states in standard automaton theory.
       */
 
     private[daut] var isFinal: Boolean = true
+
+    /**
+      * Each state is associated with an initial event that caused the sequence
+      * of states, of which this is part, to be generated. It is a form of simple
+      * error trace.
+      */
+
+    var initialEvent: Option[InitialEvent] = None
 
     /**
       * Updates the transition function to exactly the transition function provided.
@@ -578,9 +601,29 @@ class Monitor[E] {
       * @return the optional set of states resulting from taking a transition.
       */
 
+    // Original version before initialEvent was introduced:
+    // ====================================================
+    // def apply(event: E): Option[Set[state]] =
+    //   if (transitions.isDefinedAt(event))
+    //     Some(transitions(event)) else None
+
     def apply(event: E): Option[Set[state]] =
-      if (transitions.isDefinedAt(event))
-        Some(transitions(event)) else None
+      if (transitions.isDefinedAt(event)) {
+        val theInitialEvent: Option[InitialEvent] = initialEvent match {
+          case None => Some(InitialEvent(eventNumber, event))
+          case _ => initialEvent
+        }
+        val newStates = transitions(event)
+        for (ns <- newStates) {
+          ns match {
+            case `error` => reportErrorOnEvent(event, this.initialEvent)
+            case `ok` | `stay` =>
+            case ns =>
+              if (!ns.isInitial) ns.initialEvent = theInitialEvent
+          }
+        }
+        Some(newStates)
+      } else None
 
     if (initializing) {
       initial(this)
@@ -1035,6 +1078,7 @@ class Monitor[E] {
     */
 
   protected def initial(s: state) {
+    s.isInitial = true
     states.initial(s)
   }
 
@@ -1196,7 +1240,7 @@ class Monitor[E] {
     * The method uses indexing to optimize the monitoring: each event is mapped to
     * a key, which is used to fast-access the set of states relevant for the event.
     *
-    * @param event the submitted event.
+    * @param event   the submitted event.
     * @param eventNr number of event being verified. If 0 use internal counter.
     *                Passing this as argument is used when the event stream is filtered
     *                before events get passed to this function, and we want the
@@ -1204,7 +1248,7 @@ class Monitor[E] {
     * @return this monitor (allowing method chaining).
     */
 
-  def verify(event: E, eventNr : Long = 0): this.type = {
+  def verify(event: E, eventNr: Long = 0): this.type = {
     if (eventNr > 0) {
       eventNumber = eventNr
     } else {
@@ -1240,7 +1284,7 @@ class Monitor[E] {
       println()
       for (hotState <- hotStates) {
         println(hotState)
-        reportError()
+        reportErrorAtEnd(hotState.initialEvent)
       }
     }
     for (monitor <- monitors) {
@@ -1334,13 +1378,36 @@ class Monitor[E] {
   }
 
   /**
-    * Prints our event and then calls `reportError()`.
+    * Prints error message, triggering event and current event and then calls `reportError()`.
     *
-    * @param event
+    * @param event current event.
+    * @param initialEvent initially triggering event.
     */
 
-  protected def reportErrorOnEvent(event : E) : Unit = {
-    println(s"\n*** event: $event ")
+  protected def reportErrorOnEvent(event: E, initialEvent: Option[InitialEvent]): Unit = {
+    println("\n*** ERROR")
+    initialEvent match {
+      case None =>
+      case Some(trigger) =>
+        println(s"trigger event: ${trigger.event} event number ${trigger.eventNr}")
+    }
+    println(s"current event: $event event number $eventNumber")
+    reportError()
+  }
+
+  /**
+    * Prints end of trace error message, triggering event and then calls `reportError()`.
+    *
+    * @param initialEvent initially triggering event.
+    */
+
+  protected def reportErrorAtEnd(initialEvent: Option[InitialEvent]): Unit = {
+    println("\n*** ERROR AT END OF TRACE")
+    initialEvent match {
+      case None =>
+      case Some(trigger) =>
+        println(s"trigger event: ${trigger.event} event number ${trigger.eventNr}")
+    }
     reportError()
   }
 
@@ -1351,8 +1418,7 @@ class Monitor[E] {
 
   protected def reportError() {
     errorCount += 1
-    println(s"$monitorName error # $errorCount event # $eventNumber")
-    callBack()
+    println(s"$monitorName error # $errorCount")
     if (DautOptions.PRINT_ERROR_BANNER) {
       println(
         s"""
@@ -1365,6 +1431,7 @@ class Monitor[E] {
            |
         """.stripMargin)
     }
+    callBack()
     if (STOP_ON_ERROR) {
       println("\n*** terminating on first error!\n")
       throw MonitorError()
@@ -1440,7 +1507,7 @@ class Abstract[E] extends Monitor[E] {
     * Verifies an event, first adding the event to the abstraction if
     * `recording(true)` has been called. Calls `verify(event)` of the superclass.
     *
-    * @param event the submitted event.
+    * @param event   the submitted event.
     * @param eventNr number of event is counted externally.
     * @return this monitor (allowing method chaining).
     */
