@@ -71,7 +71,7 @@ and compile and run examples as follows.
 Define the path to `daut.jar` (here using bash export):
 
 ```
-export $DAUT=path/to/daut.jar
+export DAUT=path/to/daut.jar
 ```
 
 The jar file is generated with Scala 2.13.3.
