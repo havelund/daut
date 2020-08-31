@@ -328,6 +328,18 @@ object Test_Del_1_2 {
   * Analyzing Nokia log.
   */
 
+// @@@\
+
+class CSVReaderTototoshi(fileName: String) {
+  val reader = CSVReader.open(fileName).iterator
+
+  def hasNext: Boolean = reader.hasNext
+
+  def next(): List[String] = reader.next().asInstanceOf[List[String]]
+}
+
+// @@@/
+
 class LogReader(fileName: String) {
   val reader = CSVReader.open(fileName).iterator
 
