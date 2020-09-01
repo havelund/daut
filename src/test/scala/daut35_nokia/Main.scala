@@ -327,15 +327,15 @@ object Test_Del_1_2 {
   * Alternative CSV parsers.
   */
 
-class TototoshiCSVReader(fileName: String) {
-  import com.github.tototoshi.csv._
-
-  val reader = CSVReader.open(fileName).iterator
-
-  def hasNext: Boolean = reader.hasNext
-
-  def next(): List[String] = reader.next().asInstanceOf[List[String]]
-}
+//class TototoshiCSVReader(fileName: String) {
+//  import com.github.tototoshi.csv._
+//
+//  val reader = CSVReader.open(fileName).iterator
+//
+//  def hasNext: Boolean = reader.hasNext
+//
+//  def next(): List[String] = reader.next().asInstanceOf[List[String]]
+//}
 
 class FastCSVReader(fileName: String) {
   import java.io.File
