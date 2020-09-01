@@ -1,7 +1,6 @@
 package daut35_nokia
 
 import daut._
-import com.github.tototoshi.csv._
 import util.control.Breaks._
 
 /**
@@ -325,12 +324,12 @@ object Test_Del_1_2 {
 }
 
 /**
-  * Analyzing Nokia log.
+  * Alternative CSV parsers.
   */
 
-// @@@\
+class TototoshiCSVReader(fileName: String) {
+  import com.github.tototoshi.csv._
 
-class CSVReaderTototoshi(fileName: String) {
   val reader = CSVReader.open(fileName).iterator
 
   def hasNext: Boolean = reader.hasNext
@@ -338,10 +337,33 @@ class CSVReaderTototoshi(fileName: String) {
   def next(): List[String] = reader.next().asInstanceOf[List[String]]
 }
 
-// @@@/
+class FastCSVReader(fileName: String) {
+  import java.io.File
+  import de.siegmar.fastcsv.reader.CsvReader
+  import de.siegmar.fastcsv.reader.CsvRow
+  import java.nio.charset.StandardCharsets
+  import scala.collection.JavaConverters._
+
+  val file = new File(fileName)
+  val csvReader = new CsvReader
+  val csvParser = csvReader.parse(file, StandardCharsets.UTF_8)
+  var row: CsvRow = csvParser.nextRow()
+
+  def hasNext: Boolean = row != null
+
+  def next(): List[String] = {
+    val line = row.getFields.asScala.toList
+    row = csvParser.nextRow()
+    line
+  }
+}
+
+/**
+  * Analyzing Nokia log.
+  */
 
 class LogReader(fileName: String) {
-  val reader = CSVReader.open(fileName).iterator
+  val reader = new FastCSVReader(fileName)
 
   val INSERT = "insert"
   val DELETE = "delete"
@@ -394,8 +416,8 @@ class LogReader(fileName: String) {
 object VerifyNokiaLog {
   def main(args: Array[String]): Unit = {
     val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
-    val monitor = new Ins_1_2
-    // val monitor = new Del_1_2_coded
+    // val monitor = new Ins_1_2
+    val monitor = new Del_1_2_coded
     Util.time ("Analysis of ldcc.csv") {
       while (csvFile.hasNext) {
         csvFile.next match {
