@@ -1,6 +1,6 @@
 # Daut
 
-Version 1.5.5
+Version 1.5.6
 
 Daut is programmed in [Scala](https://www.scala-lang.org) and developed on a Mac.
 
@@ -60,18 +60,21 @@ There are some options:
  
 ## Installation with jar file (command line use)
 
-Just download the jar file:
+Download the jar files:
 
 ```
 https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar/daut.jar
+https://github.com/havelund/daut/tree/master/out/artifacts/daut_jar/fastcsv-1.0.1.jar
 ``` 
 
 and compile and run examples as follows.
 
-Define the path to `daut.jar` (here using bash export):
+First, define a path to the jar files (here using bash export):
 
 ```
-export DAUT=path/to/daut.jar
+export DAUTMAIN=path/to/daut.jar
+export CSV=path/to/fastcsv-1.0.1.jar
+export DAUT=$CSV:$DAUTMAIN
 ```
 
 The jar file is generated with Scala 2.13.3.
