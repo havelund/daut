@@ -4,3 +4,4 @@ project/
 target/
 local-only
 src/test/scala/daut0_experiments/
+/src/test/scala/daut37_pycontract/log_msl_timed.csv

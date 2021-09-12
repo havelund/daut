@@ -1283,8 +1283,9 @@ class Monitor[E] {
       println(s"*** Non final Daut $monitorName states:")
       println()
       for (hotState <- hotStates) {
-        println(hotState)
+        print(hotState)
         reportErrorAtEnd(hotState.initialEvent)
+        println()
       }
     }
     for (monitor <- monitors) {
