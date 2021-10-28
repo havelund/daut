@@ -289,7 +289,7 @@ class Monitor[E] {
     * Number of event currently verified. First event gets number 1.
     */
 
-  private var eventNumber: Long = 0
+  var eventNumber: Long = 0
 
   /**
     * Option, which when set to true will cause monitoring to stop the first time
