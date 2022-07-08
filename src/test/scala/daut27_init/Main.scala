@@ -29,23 +29,25 @@ class MyMonitor() extends Monitor[Event] {
 
   case class Saw(t: Int) extends fact
 }
-object Main extends App {
-  DautOptions.DEBUG = true
+object Main {
+  def main(args: Array[String]): Unit = {
+    DautOptions.DEBUG = true
 
-  var eventStream = List[Event](
-    Event (1),
-    Event (2),
-    Event (3),
-    Event (4)
-  )
+    var eventStream = List[Event](
+      Event (1),
+      Event (2),
+      Event (3),
+      Event (4)
+    )
 
-  var req = new MyMonitor()
-  req.Init()
-  req.getAllStates foreach println // just the initial state
+    var req = new MyMonitor()
+    req.Init()
+    req.getAllStates foreach println // just the initial state
 
-  var requirements = List[MyMonitor]( req )
+    var requirements = List[MyMonitor]( req )
 
-  for (event <- eventStream) {
-    req.verify(event)
+    for (event <- eventStream) {
+      req.verify(event)
+    }
   }
 }
