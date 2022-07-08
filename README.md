@@ -52,7 +52,14 @@ In the following, we shall illustrate the API by going through a collection of e
 
 There are some options:
 
-- The repository is an [SBT](https://www.scala-sbt.org) project. To run it as an SBT project you must download SBT first, and follow the instructions there on how to run SBT projects. 
+- The repository is an [SBT](https://www.scala-sbt.org) project. To run it as an SBT project you must download SBT first, and follow the instructions there on how to run SBT projects.
+
+- Use the following commands to run the tests. Each test has its own directory and main class. Type the number of the test you would like to run.
+
+  ```sh
+  $ sbt
+  sbt:daut> Test / run
+  ```
 
 - The main file is: [src/main/scala/daut/Monitor.scala](src/main/scala/daut/Monitor.scala). This source can alternatively be incorporated into your own project, fitting your own way of working, and you are up and running. One file is simplicity.
 
