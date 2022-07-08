@@ -171,7 +171,7 @@ class Monitors extends Monitor[Ev] {
   */
 
 object Test_Ins_1_2 {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     val m = new Ins_1_2
 
@@ -240,7 +240,7 @@ object Test_Ins_1_2 {
   */
 
 object Test_Del_1_2 {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     val m = new Del_1_2_opt
 
@@ -344,7 +344,7 @@ class FastCSVReader(fileName: String) {
   import de.siegmar.fastcsv.reader.CsvReader
   import de.siegmar.fastcsv.reader.CsvRow
   import java.nio.charset.StandardCharsets
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val file = new File(fileName)
   val csvReader = new CsvReader
@@ -400,7 +400,7 @@ class LogReader(fileName: String) {
               case INSERT => e = Some(Ins(t, u, db, d))
               case DELETE => e = Some(Del(t, u, db, d))
             }
-            break
+            break()
           }
         }
       }

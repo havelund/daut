@@ -38,21 +38,23 @@ class Fact extends Monitor[Event] {
 
 }
 
-object Main extends App {
-  val m = new Fact
-  DautOptions.DEBUG = true
+object Main {
+  def main(args: Array[String]): Unit = {
+    val m = new Fact
+    DautOptions.DEBUG = true
 
-  var eventStream = List[Event](
-    Time(0),
-    Value(0, "x", 1),
-    Value(0, "y", -1),
-    Time(1),
-    Value(1, "x", 0),
-    Value(1, "y", 0),
-    Value(8, "y", 0),
-  )
+    var eventStream = List[Event](
+      Time(0),
+      Value(0, "x", 1),
+      Value(0, "y", -1),
+      Time(1),
+      Value(1, "x", 0),
+      Value(1, "y", 0),
+      Value(8, "y", 0),
+    )
 
-  for (e <- eventStream) {
-    m.verify(e)
+    for (e <- eventStream) {
+      m.verify(e)
+    }
   }
 }

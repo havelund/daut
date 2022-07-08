@@ -49,7 +49,7 @@ class CorrectLock extends FastLockMonitor {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new CorrectLock
     DautOptions.DEBUG = true
     m.verify(acquire(1, 100))

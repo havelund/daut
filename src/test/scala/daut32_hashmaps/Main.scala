@@ -41,7 +41,7 @@ class OneThreadAtATime extends Monitor[LockEvent] {
 object Main {
   def mkLock(i:Int): LockId = i.toString
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val INDEX = 10000000
     DautOptions.DEBUG = false
     val m = new OneThreadAtATime

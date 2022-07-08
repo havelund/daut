@@ -37,7 +37,7 @@ class Rules extends Monitor[Event] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = true
     val m = new Rules
     m.verify(E01(10))

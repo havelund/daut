@@ -22,7 +22,7 @@ class AcquireRelease extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = true
     val m = new AcquireRelease
     m.verify(acquire(1, 10))
