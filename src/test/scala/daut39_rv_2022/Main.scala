@@ -66,7 +66,7 @@ class M3 extends Monitor[Event] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new M3
     DautOptions.DEBUG = false
     val trace =  List(

@@ -30,7 +30,7 @@ class AcquireRelease extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val INDEX = 1000000
     DautOptions.DEBUG = false
     val m = new AcquireRelease

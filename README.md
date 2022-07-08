@@ -35,7 +35,7 @@ class MyMonitor extends Monitor[SomeType] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new MyMonitor()
     m.verify(event1)
     m.verify(event2)
@@ -114,7 +114,7 @@ class AcquireRelease extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = true
     val m = new AcquireRelease
     m.verify(acquire(1, 10))
@@ -221,7 +221,7 @@ We can now apply the monitor, as for example in the following main program:
 
 ```scala
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new AcquireRelease
     m.verify(acquire(1, 10))
     m.verify(release(1, 10))
@@ -383,7 +383,7 @@ The following main program exercises the monitor.
 
 ```scala
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new StartStop
     m.PRINT = true
     m.verify(start(0))
@@ -637,7 +637,7 @@ Finally, we can instantiate the monitor:-
 
 ```scala
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new ReleaseWithin(500) printSteps()
     m.verify(acquire(1, 10, 100))
     m.verify(release(1, 10, 800)) // violates property
@@ -722,7 +722,7 @@ class Monitors extends Monitor[Event] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new Monitors // now monitoring two sub-monitors
     m.verify(acquire(1, 10))
     m.verify(release(1, 10))
@@ -782,7 +782,7 @@ Let us apply this monitor as follows:
 
 ```scala
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new CorrectLock
     m.verify(acquire(1, 100))
     m.verify(acquire(2, 200))
@@ -928,7 +928,7 @@ if any, perform a proper action:
 
 ```scala
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new Monitors // now monitoring two sub-monitors
     m.verify(acquire(1, 10))
     m.verify(release(1, 10))
@@ -1093,7 +1093,7 @@ Finally, we can invoke `AllMonitors`:
 
 ```scala
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new AllMonitors
     m.verify(Send("ignore this message"))
     m.verify(Open)
@@ -1165,7 +1165,7 @@ Note that we have added the `label(t,x)` to the `hot` state. This will cause the
 
 ```
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new CorrectLock
     DautOptions.DEBUG = true
     m.verify(acquire(1, 100))

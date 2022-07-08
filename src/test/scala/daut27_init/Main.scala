@@ -16,7 +16,7 @@ class MyMonitor() extends Monitor[Event] {
     case Event(2) => Saw(2)
   }
 
-  def Init() {
+  def Init(): Unit = {
     MyFact(3)
     MyFact(4)
   }

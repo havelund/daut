@@ -51,7 +51,7 @@ class CommandExecution extends Monitor[Event] {
 }
 
 object Test {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     val m = new CommandExecution
 
@@ -84,7 +84,7 @@ class FastCSVReader(fileName: String) {
   import de.siegmar.fastcsv.reader.CsvReader
   import de.siegmar.fastcsv.reader.CsvRow
   import java.nio.charset.StandardCharsets
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val file = new File(fileName)
   val csvReader = new CsvReader

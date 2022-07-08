@@ -35,7 +35,7 @@ class Response3[E, R1, R2](p1: PartialFunction[E, R1], p2: PartialFunction[E, R2
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m1 = new Response1[E](
       { case E1(t) => t > 100 },
       { case E2(t) => t < 200 }
