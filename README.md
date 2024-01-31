@@ -1383,4 +1383,4 @@ Ending Daut trace evaluation for CorrectLock
 
 ## Contributions
 
-Daut was developed by Klaus Havelund <klaus.havelund@jpl.nasa.gov>
+Daut was developed by Klaus Havelund (<klaus.havelund@jpl.nasa.gov>).
