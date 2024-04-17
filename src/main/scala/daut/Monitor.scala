@@ -307,7 +307,7 @@ class Monitor[E] {
     * @param monitors the monitors to become sub-monitors of this monitor.
     */
 
-  def monitor(monitors: Monitor[E]*) {
+  def monitor(monitors: Monitor[E]*): Unit = {
     for (monitor <- monitors) {
       monitor.monitorAtTop = false
     }
@@ -1077,7 +1077,7 @@ class Monitor[E] {
     * @param s state to be added as initial state.
     */
 
-  protected def initial(s: state) {
+  protected def initial(s: state): Unit = {
     s.isInitial = true
     states.initial(s)
   }
@@ -1326,7 +1326,7 @@ class Monitor[E] {
     * @param event the event being verified.
     */
 
-  protected def verifyBeforeEvent(event: E) {}
+  protected def verifyBeforeEvent(event: E): Unit = {}
 
   /**
     * This method is called <b>after</b> every call of `verify(event: E)`.
@@ -1335,7 +1335,7 @@ class Monitor[E] {
     * @param event the event being verified.
     */
 
-  protected def verifyAfterEvent(event: E) {}
+  protected def verifyAfterEvent(event: E): Unit = {}
 
   /**
     * This method is called when the monitor encounters an error, be it a safety
@@ -1361,13 +1361,13 @@ class Monitor[E] {
     * Prints the current states of the monitor, and its sub-monitors.
     */
 
-  private def printStates() {
+  private def printStates(): Unit = {
     println(s"--- $monitorName:")
     println("[memory] ")
     for (s <- states.getMainStates) {
       println(s"  $s")
     }
-    println
+    println()
     for (index <- states.getIndexes) {
       println(s"[index=$index]")
       for (s <- states.getIndexedSet(index)) {
@@ -1417,7 +1417,7 @@ class Monitor[E] {
     * Updates error count.
     */
 
-  protected def reportError() {
+  protected def reportError(): Unit = {
     errorCount += 1
     println(s"$monitorName error # $errorCount")
     if (DautOptions.PRINT_ERROR_BANNER) {

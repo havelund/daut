@@ -42,7 +42,7 @@ object Main {
   val traceAB = List(A(10), B(10))
   val traceAC = List(A(10), C(10))
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = true
     val gB = new Generic[B]
     val gC = new Generic[C]

@@ -30,7 +30,7 @@
  * }
  *
  * object Main {
- *   def main(args: Array[String]) {
+ *   def main(args: Array[String]): Unit = {
  *     val m = new MyMonitor()
  *     m.verify(event1)
  *     m.verify(event2)

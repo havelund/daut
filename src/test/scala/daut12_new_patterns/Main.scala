@@ -50,7 +50,7 @@ class AllMonitors extends Monitor[RadioEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new AllMonitors
     m.verify(Send("ignore this message"))
     m.verify(Open)

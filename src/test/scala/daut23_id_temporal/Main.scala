@@ -48,7 +48,7 @@ class CorrectElevator extends ElevatorMonitor {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new CorrectElevator
     DautOptions.DEBUG = true
     m(request(1, 100))

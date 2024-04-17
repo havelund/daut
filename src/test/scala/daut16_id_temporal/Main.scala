@@ -30,7 +30,7 @@ class OneThread extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val INDEX = 3
     DautOptions.DEBUG = true
     val m = new OneThread
