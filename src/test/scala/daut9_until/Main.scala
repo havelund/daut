@@ -1,7 +1,7 @@
 package daut9_until
 
 import daut._
-import daut.Monitor
+import scala.reflect.Selectable.reflectiveSelectable
 
 trait LockEvent
 case class acquire(thread: Int, lock: Int) extends LockEvent
@@ -19,14 +19,14 @@ class TestMonitor extends Monitor[LockEvent] {
     case acquire(t, l) =>
       until {
         case release(`t`, `l`) => ok
-      } watch {
+      }.watch {
         case release(_, `l`) => error
       }
   }
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new TestMonitor
     m.verify(acquire(1, 10))
     m.verify(release(2, 10))

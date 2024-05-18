@@ -170,7 +170,7 @@ class BothMonitors extends Monitor[Event] {
   */
 
 object Test_Ins_1_2 {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     val m = new Ins_1_2
 
@@ -239,7 +239,7 @@ object Test_Ins_1_2 {
   */
 
 object Test_Del_1_2 {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     val m = new Del_1_2_coded
 

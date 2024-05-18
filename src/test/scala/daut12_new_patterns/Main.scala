@@ -1,6 +1,7 @@
 package daut12_new_patterns
 
 import daut._
+import scala.reflect.Selectable.reflectiveSelectable
 
 /**
  * ReceiveWhenOpen: when the radio is open, all sent messages should be
@@ -23,7 +24,7 @@ class NewMonitor[E] extends Monitor[E] {
       case `e1` =>
         unless {
           case `e2` => ok
-        } watch (tr)
+        }.watch (tr)
     }
   }
 }
@@ -50,7 +51,7 @@ class AllMonitors extends Monitor[RadioEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new AllMonitors
     m.verify(Send("ignore this message"))
     m.verify(Open)

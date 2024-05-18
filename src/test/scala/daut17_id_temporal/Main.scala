@@ -25,12 +25,12 @@ class LocksNotReentrant extends Monitor[LockEvent] {
       watch {
         case acquire(`t`,`x`) => error
         case release(`t`,`x`) => ok
-      } label(t,x)
+      }.label(t,x)
   }
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val INDEX = 3
     DautOptions.DEBUG = true
     val m = new LocksNotReentrant

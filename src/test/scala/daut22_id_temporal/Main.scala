@@ -33,12 +33,12 @@ class CorrectElevator extends UpMonitor {
         case request(floor2) if floor2 != floor => error
         case going(floor2) if floor2 != floor => error
         case reached(floor2) if floor2 != floor => error
-      } label (floor)
+      }.label (floor)
   }
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new CorrectElevator
     DautOptions.DEBUG = true
     m.verify(request(100))

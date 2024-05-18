@@ -1,6 +1,7 @@
 package daut10_map
 
 import daut._
+import scala.reflect.Selectable.reflectiveSelectable
 
 trait LockEvent
 case class acquire(thread: Int, lock: Int) extends LockEvent
@@ -46,7 +47,7 @@ class TestMonitor2 extends Monitor[LockEvent] {
     case acquire(t, x) => {
       map {
         case Locked(_,`x`) => error
-      } orelse {
+      }.orelse {
         Locked(t, x)
       }
     }
@@ -74,9 +75,9 @@ class TestMonitor3 extends Monitor[LockEvent] {
     case acquire(t, x) => {
       map {
         case Locked(_,`x`) =>
-          map {
+          this.map {
             case Locked(`t`,y) if x != y => error
-          } orelse {
+          }.orelse {
             println("Can't lock but is not holding any other lock, so it's ok")
           }
       } orelse {
@@ -99,7 +100,7 @@ class TestMonitor extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = true
     val m = new TestMonitor
     // m.stopOnError()

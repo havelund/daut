@@ -29,7 +29,7 @@ class AcquireRelease extends Monitor[LockEvent] {
       case acquire(t, x) => hot {
         case acquire(_, `x`) => error
         case release(`t`, `x`) => start()
-      } label(t, x)
+      }.label(t, x)
       case release(_, _) => error
     }
 
@@ -37,7 +37,7 @@ class AcquireRelease extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new AcquireRelease
     DautOptions.DEBUG = true
     m(acquire(1, 10))
