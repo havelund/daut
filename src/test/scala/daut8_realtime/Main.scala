@@ -24,7 +24,7 @@ class ReleaseWithin(limit: Int) extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val m = new ReleaseWithin(500)
     m.verify(acquire(1, 10, 100))
     m.verify(release(1, 10, 800)) // violates property

@@ -33,7 +33,7 @@ class AcquireRelease extends Monitor[LockEvent] {
       hot {
         case acquire(`t`, _) => error
         case release(`t`, `x`) => ok
-      } label(t, x)
+      }.label(t, x)
   }
 }
 
@@ -50,7 +50,7 @@ class OneThread extends Monitor[LockEvent] {
       watch {
         case acquire(_, `x`) => error
         case release(`t`, `x`) => ok
-      } label(t, x)
+      }.label(t, x)
   }
 }
 
@@ -67,7 +67,7 @@ class LocksNotReentrant extends Monitor[LockEvent] {
       watch {
         case acquire(`t`, `x`) => error
         case release(`t`, `x`) => ok
-      } label(t, x)
+      }.label(t, x)
   }
 }
 
@@ -80,7 +80,7 @@ class AllMonitors extends Monitor[LockEvent] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val INDEX = 3
     DautOptions.DEBUG = true
     val m = new AllMonitors

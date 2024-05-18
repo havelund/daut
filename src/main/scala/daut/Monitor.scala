@@ -1,6 +1,7 @@
 package daut
 
 import scala.collection.mutable.{Map => MutMap}
+import scala.language.{implicitConversions, reflectiveCalls}
 
 /**
   * Daut options to be set by the user.
@@ -46,7 +47,7 @@ object Util {
     * @param text  this text is printed as part of the timing information.
     * @param block the code to be executed.
     * @tparam R the result type of the block to be executed.
-    * @return the result of ececution the block.
+    * @return the result of execution the block.
     */
 
   def time[R](text: String)(block: => R): R = {
@@ -258,7 +259,7 @@ class Monitor[E] {
     * The active states of the monitor, excluding those of its sub-monitors.
     */
 
-  private var states = new States()
+  private val states = new States()
 
   /**
     * This variable holds invariants that have been defined by the user with one of the
@@ -307,7 +308,7 @@ class Monitor[E] {
     * @param monitors the monitors to become sub-monitors of this monitor.
     */
 
-  def monitor(monitors: Monitor[E]*) {
+  def monitor(monitors: Monitor[E]*): Unit = {
     for (monitor <- monitors) {
       monitor.monitorAtTop = false
     }
@@ -363,7 +364,7 @@ class Monitor[E] {
     */
 
   protected def invariant(inv: => Boolean): Unit = {
-    invariants ::= ("", ((x: Unit) => inv))
+    invariants ::= ("", (_: Unit) => inv)
     check(inv, "")
   }
 
@@ -378,7 +379,7 @@ class Monitor[E] {
     */
 
   protected def invariant(e: String)(inv: => Boolean): Unit = {
-    invariants ::= (e, ((x: Unit) => inv))
+    invariants ::= (e, (_: Unit) => inv)
     check(inv, e)
   }
 
@@ -543,22 +544,22 @@ class Monitor[E] {
     }
 
     /**
-      * An expression of the form `unless {ts1} watch {ts2`} watches `ts2` repeatedly
-      * unless `ts1` fires. That is, the expression updates the transition function as
-      * the combination of the two transition functions provided. The resulting transition function
-      * first tries `ts1`, and if it can fire that is chosen. Otherwise `t2` is tried,
-      * and if it can fire it is made to fire, and the unless-state is re-added to the resulting state set.
-      * The transition function `ts1` does not need to ever fire, which makes the state final.
-      * If the state has already been initialized with a transition function it calls the
-      * corresponding function in the monitor, which returns a new state.
-      *
-      * @param ts1 the transition function.
-      * @return the state itself, allowing for further chained method calls.
-      */
+     * An expression of the form `unless {ts1} watch {ts2`} watches `ts2` repeatedly
+     * unless `ts1` fires. That is, the expression updates the transition function as
+     * the combination of the two transition functions provided. The resulting transition function
+     * first tries `ts1`, and if it can fire that is chosen. Otherwise `t2` is tried,
+     * and if it can fire it is made to fire, and the unless-state is re-added to the resulting state set.
+     * The transition function `ts1` does not need to ever fire, which makes the state final.
+     * If the state has already been initialized with a transition function it calls the
+     * corresponding function in the monitor, which returns a new state.
+     *
+     * @param ts1 the transition function.
+     * @return the state itself, allowing for further chained method calls.
+     */
 
-    def unless(ts1: Transitions) = new {
+    def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
-        if (transitionsInitialized) return thisMonitor.unless(ts1) watch (ts2)
+        if (transitionsInitialized) return thisMonitor.unless(ts1).watch(ts2)
         transitionsInitialized = true
         name = "until"
         transitions = ts1 orElse (ts2 andThen (_ + thisState))
@@ -581,9 +582,9 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def until(ts1: Transitions) = new {
+    def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
-        if (transitionsInitialized) return thisMonitor.until(ts1) watch (ts2)
+        if (transitionsInitialized) return thisMonitor.until(ts1).watch(ts2)
         transitionsInitialized = true
         name = "until"
         transitions = ts1 orElse (ts2 andThen (_ + thisState))
@@ -672,7 +673,7 @@ class Monitor[E] {
       * The outer always state prints as: `always` whereas the inner hot state
       * prints as `hot(1,3)` for data `t=1` and `x=3`.
       *
-      * @param values the values to be incuded in the label.
+      * @param values the values to be included in the label.
       * @return the state itself, but updated with the label.
       */
 
@@ -725,7 +726,7 @@ class Monitor[E] {
 
   /**
     * The state is usually assigned to a local `val`-variable that can be queried
-    * e.g. in invariants, either simply using the during state as a Boolean (the state is lifted to a Booelean
+    * e.g. in invariants, either simply using the during state as a Boolean (the state is lifted to a Boolean
     * with an implicit function) or by using the ==> method. Consider the following
     * example illustrating a monitor that checks that at most one of two threads 1 and 2
     * are in a critical section at any time, using an invariant. A thread `x` can enter a critical
@@ -775,7 +776,7 @@ class Monitor[E] {
     private[daut] var on: Boolean = false
 
     /**
-      * This method allows us, given a during-state `dur`, to write a Booelean
+      * This method allows us, given a during-state `dur`, to write a Boolean
       * expression of the form `dur ==> condition`, meaning: if `dur` is in the interval
       * then the `condition` must hold.
       *
@@ -783,7 +784,7 @@ class Monitor[E] {
       * @return true if the during state is not within an interval, or if the condition `b` holds.
       */
 
-    def ==>(b: Boolean) = {
+    def ==>(b: Boolean): Boolean = {
       !on || b
     }
 
@@ -804,7 +805,7 @@ class Monitor[E] {
       this
     }
 
-    always {
+    this.always {
       case e =>
         if (begin.contains(e)) {
           on = true
@@ -835,8 +836,8 @@ class Monitor[E] {
     * @return an anonymous watch-state.
     */
 
-  protected def watch(ts: Transitions) = new anonymous {
-    watch(ts)
+  protected def watch(ts: Transitions): anonymous = new anonymous {
+    this.watch(ts)
   }
 
   /**
@@ -850,8 +851,8 @@ class Monitor[E] {
     * @return an anonymous always-state.
     */
 
-  protected def always(ts: Transitions) = new anonymous {
-    always(ts)
+  protected def always(ts: Transitions): anonymous = new anonymous {
+    this.always(ts)
   }
 
   /**
@@ -864,8 +865,8 @@ class Monitor[E] {
     * @return an anonymous hot-state.
     */
 
-  protected def hot(ts: Transitions) = new anonymous {
-    hot(ts)
+  protected def hot(ts: Transitions): anonymous = new anonymous {
+    this.hot(ts)
   }
 
   /**
@@ -878,8 +879,8 @@ class Monitor[E] {
     * @return an anonymous wnext-state.
     */
 
-  protected def wnext(ts: Transitions) = new anonymous {
-    wnext(ts)
+  protected def wnext(ts: Transitions): anonymous = new anonymous {
+    this.wnext(ts)
   }
 
   /**
@@ -892,8 +893,8 @@ class Monitor[E] {
     * @return an anonymous next-state.
     */
 
-  protected def next(ts: Transitions) = new anonymous {
-    next(ts)
+  protected def next(ts: Transitions): anonymous = new anonymous {
+    this.next(ts)
   }
 
   /**
@@ -909,8 +910,8 @@ class Monitor[E] {
     */
 
   protected def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    def watch(ts2: Transitions) = new anonymous {
-      unless(ts1) watch (ts2)
+    def watch(ts2: Transitions): anonymous = new anonymous {
+      this.unless(ts1).watch(ts2)
     }
   }
 
@@ -928,8 +929,8 @@ class Monitor[E] {
     */
 
   protected def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    def watch(ts2: Transitions) = new anonymous {
-      until(ts1) watch (ts2)
+    def watch(ts2: Transitions): anonymous = new anonymous {
+      this.until(ts1).watch(ts2)
     }
   }
 
@@ -951,84 +952,84 @@ class Monitor[E] {
   }
 
   /**
-    * The `map` method returns a set of states computed as follows.
-    * If the provided argument partial function `pf` is defined for any active states,
-    * the resulting set is the union of all the state sets obtained by
-    * applying the function to the active states for which it is defined.
-    * Otherwise the returned set is the set `otherwise` provided as
-    * argument to the `orelse` method.
-    *
-    * As an example, consider the following monitor, which checks that
-    * at most one task can acquire a lock at a time, and that
-    * a task cannot release a lock it has not acquired.
-    * This monitor illustrates the `map` function, which looks for stored
-    * facts matching a pattern, and the ensure function, which checks a
-    * condition (an assert). This function here in this example tests for
-    * the presence of a Locked fact which is created when a lock is taken.
-    *
-    * {{{
-    * trait LockEvent
-    * case class acquire(thread: Int, lock: Int) extends LockEvent
-    * case class release(thread: Int, lock: Int) extends LockEvent
-    *
-    * class OneAtATime extends Monitor[LockEvent] {
-    *   case class Locked(thread: Int, lock: Int) extends state {
-    *     watch {
-    *       case release(thread, lock) => ok
-    *     }
-    *   }
-    *
-    *   always {
-    *     case acquire(t, l) => {
-    *       map {
-    *         case Locked(_,`l`) => error("allocated more than once")
-    *       } orelse {
-    *         Locked(t,l)
-    *       }
-    *     }
-    *     case release(t, l) => ensure(Locked(t,l))
-    *   }
-    * }
-    * }}}
-    *
-    * A more sophisticated example involving nested `map` calls is
-    * the following that checks that when a task `t` is acquiring a
-    * lock that some other task holds, and `t` therefore cannot get it,
-    * then `t` is not allowed to hold any other locks (to prevent deadlocks).
-    *
-    * {{{
-    * class AvoidDeadlocks extends Monitor[LockEvent] {
-    *   case class Locked(thread: Int, lock: Int) extends state {
-    *     watch {
-    *       case release(`thread`, `lock`) => ok
-    *     }
-    *   }
-    *
-    *   always {
-    *     case acquire(t, l) => {
-    *       map {
-    *         case Locked(_,`l`) =>
-    *           map {
-    *             case Locked(`t`,x) if l != x => error
-    *           } orelse {
-    *             println("Can't lock but is not holding any other lock, so it's ok")
-    *           }
-    *       } orelse {
-    *         Locked(t,l)
-    *       }
-    *     }
-    *   }
-    * }
-    * }}}
-    *
-    * @param pf partial function.
-    * @return set of states produced from applying the partial function `fp` to active states.
-    */
+   * The `map` method returns a set of states computed as follows.
+   * If the provided argument partial function `pf` is defined for any active states,
+   * the resulting set is the union of all the state sets obtained by
+   * applying the function to the active states for which it is defined.
+   * Otherwise the returned set is the set `otherwise` provided as
+   * argument to the `orelse` method.
+   *
+   * As an example, consider the following monitor, which checks that
+   * at most one task can acquire a lock at a time, and that
+   * a task cannot release a lock it has not acquired.
+   * This monitor illustrates the `map` function, which looks for stored
+   * facts matching a pattern, and the ensure function, which checks a
+   * condition (an assert). This function here in this example tests for
+   * the presence of a Locked fact which is created when a lock is taken.
+   *
+   * {{{
+   * trait LockEvent
+   * case class acquire(thread: Int, lock: Int) extends LockEvent
+   * case class release(thread: Int, lock: Int) extends LockEvent
+   *
+   * class OneAtATime extends Monitor[LockEvent] {
+   *   case class Locked(thread: Int, lock: Int) extends state {
+   *     watch {
+   *       case release(thread, lock) => ok
+   *     }
+   *   }
+   *
+   *   always {
+   *     case acquire(t, l) => {
+   *       map {
+   *         case Locked(_,`l`) => error("allocated more than once")
+   *       } orelse {
+   *         Locked(t,l)
+   *       }
+   *     }
+   *     case release(t, l) => ensure(Locked(t,l))
+   *   }
+   * }
+   * }}}
+   *
+   * A more sophisticated example involving nested `map` calls is
+   * the following that checks that when a task `t` is acquiring a
+   * lock that some other task holds, and `t` therefore cannot get it,
+   * then `t` is not allowed to hold any other locks (to prevent deadlocks).
+   *
+   * {{{
+   * class AvoidDeadlocks extends Monitor[LockEvent] {
+   *   case class Locked(thread: Int, lock: Int) extends state {
+   *     watch {
+   *       case release(`thread`, `lock`) => ok
+   *     }
+   *   }
+   *
+   *   always {
+   *     case acquire(t, l) => {
+   *       map {
+   *         case Locked(_,`l`) =>
+   *           map {
+   *             case Locked(`t`,x) if l != x => error
+   *           } orelse {
+   *             println("Can't lock but is not holding any other lock, so it's ok")
+   *           }
+   *       } orelse {
+   *         Locked(t,l)
+   *       }
+   *     }
+   *   }
+   * }
+   * }}}
+   *
+   * @param pf partial function.
+   * @return set of states produced from applying the partial function `fp` to active states.
+   */
 
-  protected def map(pf: PartialFunction[state, Set[state]]) = new {
+  protected def map(pf: PartialFunction[state, Set[state]]): Object {def orelse(otherwise: => Set[state]): Set[state]} = new {
     def orelse(otherwise: => Set[state]): Set[state] = {
-      val matchingStates = states.getAllStates filter (pf.isDefinedAt(_))
-      if (!matchingStates.isEmpty) {
+      val matchingStates = states.getAllStates filter pf.isDefinedAt
+      if (matchingStates.nonEmpty) {
         (for (matchingState <- matchingStates) yield pf(matchingState)).flatten
       } else
         otherwise
@@ -1037,7 +1038,7 @@ class Monitor[E] {
 
   /**
     * Returns the state `ok` if the Boolean expression `b` is true, otherwise
-    * it returns the `error` state. The mothod can for example be used as the
+    * it returns the `error` state. The method can for example be used as the
     * result of a transition.
     *
     * @param b Boolean condition.
@@ -1077,7 +1078,7 @@ class Monitor[E] {
     * @param s state to be added as initial state.
     */
 
-  protected def initial(s: state) {
+  protected def initial(s: state): Unit = {
     s.isInitial = true
     states.initial(s)
   }
@@ -1176,44 +1177,44 @@ class Monitor[E] {
     states.toSet
 
   /**
-    * Implicit function lifting a state to an anonymous object defining the `&`-operator,
-    * which defines conjunction of states. Hence one can write `state1 & state2`, which then
-    * results in the set `Set(state1,state2)`.
-    *
-    * @param s1 the state to be lifted.
-    * @return the anonymous object defining the method `&(s2: state): Set[state]`.
-    */
+   * Implicit function lifting a state to an anonymous object defining the `&`-operator,
+   * which defines conjunction of states. Hence one can write `state1 & state2`, which then
+   * results in the set `Set(state1,state2)`.
+   *
+   * @param s1 the state to be lifted.
+   * @return the anonymous object defining the method `&(s2: state): Set[state]`.
+   */
 
-  protected implicit def convState2AndState(s1: state) = new {
+  protected implicit def convState2AndState(s1: state): Object {def &(s2: state): Set[state]} = new {
     def &(s2: state): Set[state] = Set(s1, s2)
   }
 
   /**
-    * Implicit function lifting a set of states to an anonymous object defining the `&`-operator,
-    * which defines conjunction of states. Hence one can write `state1 & state2 & state3`, which then
-    * results in the set `Set(state1,state2,state3)`. This works by first lifting
-    * `state1 & state2` to the set `Set(state1,state2)`, and then apply `& state3` to
-    * obtain `Set(state1,state2,state3)`.
-    *
-    * @param set the set of states to be lifted.
-    * @return the anonymous object defining the method `&(s2: state): Set[state]`.
-    */
+   * Implicit function lifting a set of states to an anonymous object defining the `&`-operator,
+   * which defines conjunction of states. Hence one can write `state1 & state2 & state3`, which then
+   * results in the set `Set(state1,state2,state3)`. This works by first lifting
+   * `state1 & state2` to the set `Set(state1,state2)`, and then apply `& state3` to
+   * obtain `Set(state1,state2,state3)`.
+   *
+   * @param set the set of states to be lifted.
+   * @return the anonymous object defining the method `&(s2: state): Set[state]`.
+   */
 
-  protected implicit def conStateSet2AndStateSet(set: Set[state]) = new {
+  protected implicit def conStateSet2AndStateSet(set: Set[state]): Object {def &(s: state): Set[state]} = new {
     def &(s: state): Set[state] = set + s
   }
 
   /**
-    * Implicit function lifting a Boolean to an anonymous object defining the implication
-    * operator. This allows to write `b1 ==> b2` for two Boolean expressions
-    * `b1` and `b2`. It has the same meaning as `!b1 || b2`.
-    *
-    * @param p the Boolean to be lifted.
-    * @return the anonymous object defining the method `==>(q: Boolean)`.
-    */
+   * Implicit function lifting a Boolean to an anonymous object defining the implication
+   * operator. This allows to write `b1 ==> b2` for two Boolean expressions
+   * `b1` and `b2`. It has the same meaning as `!b1 || b2`.
+   *
+   * @param p the Boolean to be lifted.
+   * @return the anonymous object defining the method `==>(q: Boolean)`.
+   */
 
-  protected implicit def liftBoolean(p: Boolean) = new {
-    def ==>(q: Boolean) = !p || q
+  protected implicit def liftBoolean(p: Boolean): Object {def ==>(q: Boolean): Boolean} = new {
+    def ==>(q: Boolean): Boolean = !p || q
   }
 
   /**
@@ -1258,7 +1259,7 @@ class Monitor[E] {
     verifyBeforeEvent(event)
     if (monitorAtTop) debug("\n===[" + event + "]===\n")
     states.applyEvent(event)
-    invariants foreach { case (e, inv) => check(inv(), e) }
+    invariants foreach { case (e, inv) => check(inv(()), e) }
     for (monitor <- monitors) {
       monitor.verify(event)
     }
@@ -1278,7 +1279,7 @@ class Monitor[E] {
     debug(s"Ending Daut trace evaluation for $monitorName")
     val theEndStates = states.getAllStates
     val hotStates = theEndStates filter (!_.isFinal)
-    if (!hotStates.isEmpty) {
+    if (hotStates.nonEmpty) {
       println()
       println(s"*** Non final Daut $monitorName states:")
       println()
@@ -1326,7 +1327,7 @@ class Monitor[E] {
     * @param event the event being verified.
     */
 
-  protected def verifyBeforeEvent(event: E) {}
+  protected def verifyBeforeEvent(event: E): Unit = {}
 
   /**
     * This method is called <b>after</b> every call of `verify(event: E)`.
@@ -1335,7 +1336,7 @@ class Monitor[E] {
     * @param event the event being verified.
     */
 
-  protected def verifyAfterEvent(event: E) {}
+  protected def verifyAfterEvent(event: E): Unit = {}
 
   /**
     * This method is called when the monitor encounters an error, be it a safety
@@ -1361,7 +1362,7 @@ class Monitor[E] {
     * Prints the current states of the monitor, and its sub-monitors.
     */
 
-  private def printStates() {
+  private def printStates(): Unit = {
     println(s"--- $monitorName:")
     println("[memory] ")
     for (s <- states.getMainStates) {
@@ -1417,7 +1418,7 @@ class Monitor[E] {
     * Updates error count.
     */
 
-  protected def reportError() {
+  protected def reportError(): Unit = {
     errorCount += 1
     println(s"$monitorName error # $errorCount")
     if (DautOptions.PRINT_ERROR_BANNER) {
@@ -1466,7 +1467,7 @@ class Abstract[E] extends Monitor[E] {
     * Contains the abstraction being produced.
     */
 
-  private var abstraction = new scala.collection.mutable.ListBuffer[E]()
+  private val abstraction = new scala.collection.mutable.ListBuffer[E]()
 
   /**
     * If true all events consumed are copied to the abstraction.
@@ -1523,7 +1524,7 @@ class Abstract[E] extends Monitor[E] {
   * This monitor class provides methods for performing abstraction in addition
   * to performing verification. The result of a verification is a new trace.
   *
-  * @tparam E the type of events submitted to the monitor.
+  * @tparam E1 the type of events submitted to the monitor.
   */
 
 class Translate[E1, E2] extends Monitor[E1] {
@@ -1531,7 +1532,7 @@ class Translate[E1, E2] extends Monitor[E1] {
     * Contains the abstraction being produced.
     */
 
-  private var abstraction = new scala.collection.mutable.ListBuffer[E2]()
+  private val abstraction = new scala.collection.mutable.ListBuffer[E2]()
 
   /**
     * Adds event to the abstraction trace.

@@ -51,7 +51,7 @@ class CommandExecution extends Monitor[Event] {
 }
 
 object Test {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     val m = new CommandExecution
 

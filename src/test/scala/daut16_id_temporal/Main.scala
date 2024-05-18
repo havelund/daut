@@ -20,17 +20,17 @@ class OneThread extends Monitor[LockEvent] {
       }
     }
 
-  always {
-    case acquire(t, x) =>
-      watch {
-        case acquire(_,`x`) => error
-        case release(`t`,`x`) => ok
-      } label(t,x)
-  }
+    always {
+      case acquire(t, x) =>
+        watch {
+          case acquire(_,`x`) => error
+          case release(`t`,`x`) => ok
+        }.label(t,x)
+    }
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val INDEX = 3
     DautOptions.DEBUG = true
     val m = new OneThread

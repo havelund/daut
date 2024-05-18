@@ -1,6 +1,7 @@
 package daut26_nfer
 
 import daut._
+import scala.reflect.Selectable.reflectiveSelectable
 
 /**
   * Abstraction example from
@@ -172,7 +173,7 @@ class DownLinkOk7 extends Monitor[Event] {
       case _ =>
         map {
           case DBOOT(start, end, count) if start <= time && time <= end => RISK(start, end , count)
-        } orelse {
+        }.orelse {
           stay
         }
     }
@@ -202,7 +203,7 @@ class DownLinkOk7 extends Monitor[Event] {
 }
 
 object Main {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = true
     val m = new DownLinkOk7
 
