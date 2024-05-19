@@ -25,7 +25,7 @@ class LocksNotReentrant extends Monitor[LockEvent] {
       watch {
         case acquire(`t`,`x`) => error
         case release(`t`,`x`) => ok
-      }.label(t,x)
+      } label(t,x)
   }
 }
 

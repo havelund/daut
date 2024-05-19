@@ -29,7 +29,7 @@ class TestMonitor extends Monitor[LockEvent] {
         case acquire(`t`, `x`) => stay
         case acquire(_, `x`) => error
         case release(`t`, `x`) => ok
-      }.label(t,x)
+      } label(t,x)
     }
   }
 
@@ -50,7 +50,7 @@ class AcquireRelease extends Monitor[LockEvent] {
         case acquire(`t`, `x`) => stay
         case acquire(_, `x`) => error
         case release(`t`, `x`) => ok
-      }.label(t, x)
+      } label(t, x)
   }
 }
 

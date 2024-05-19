@@ -27,7 +27,7 @@ class AcquireRelease extends Monitor[LockEvent] {
       hot {
         case acquire(`t`,_) => error
         case CANCEL | release(`t`,`x`) => ok
-      }.label(t,x)
+      } label(t,x)
   }
 }
 

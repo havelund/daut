@@ -24,7 +24,7 @@ class NewMonitor[E] extends Monitor[E] {
       case `e1` =>
         unless {
           case `e2` => ok
-        }.watch (tr)
+        } watch (tr)
     }
   }
 }

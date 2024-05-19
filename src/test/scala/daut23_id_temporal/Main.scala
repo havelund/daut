@@ -39,7 +39,7 @@ class CorrectElevator extends ElevatorMonitor {
       case request(`e`, `f`) | going(`e`, `f`) => stay
       case reached(`e`, `f`) | RESET => property()
       case _ => error
-    }.label(e, f)
+    } label(e, f)
     case RESET => stay
     case _ => error
   }

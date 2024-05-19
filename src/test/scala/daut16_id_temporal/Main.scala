@@ -25,7 +25,7 @@ class OneThread extends Monitor[LockEvent] {
         watch {
           case acquire(_,`x`) => error
           case release(`t`,`x`) => ok
-        }.label(t,x)
+        } label(t,x)
     }
 }
 

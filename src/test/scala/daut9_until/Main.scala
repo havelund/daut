@@ -19,7 +19,7 @@ class TestMonitor extends Monitor[LockEvent] {
     case acquire(t, l) =>
       until {
         case release(`t`, `l`) => ok
-      }.watch {
+      } watch {
         case release(_, `l`) => error
       }
   }
