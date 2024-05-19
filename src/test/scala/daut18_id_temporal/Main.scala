@@ -18,7 +18,7 @@ class OneLockGlobally extends Monitor[LockEvent] {
       watch {
         case acquire(_,_) => error
         case release(`t`,`x`) => ok
-      }.label(t,x)
+      } label(t,x)
   }
 }
 

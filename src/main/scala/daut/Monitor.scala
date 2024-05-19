@@ -452,7 +452,7 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def watch(ts: Transitions): state = {
+    infix def watch(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.watch(ts)
       transitionsInitialized = true
       name = "watch"
@@ -473,7 +473,7 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def always(ts: Transitions): state = {
+    infix def always(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.always(ts)
       transitionsInitialized = true
       name = "always"
@@ -493,7 +493,7 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def hot(ts: Transitions): state = {
+    infix def hot(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.hot(ts)
       transitionsInitialized = true
       name = "hot"
@@ -514,7 +514,7 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def wnext(ts: Transitions): state = {
+    infix def wnext(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.wnext(ts)
       transitionsInitialized = true
       name = "wnext"
@@ -534,7 +534,7 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def next(ts: Transitions): state = {
+    infix def next(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.next(ts)
       transitionsInitialized = true
       name = "next"
@@ -557,7 +557,7 @@ class Monitor[E] {
      * @return the state itself, allowing for further chained method calls.
      */
 
-    def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
+    infix def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
         if (transitionsInitialized) return thisMonitor.unless(ts1).watch(ts2)
         transitionsInitialized = true
@@ -582,7 +582,7 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
+    infix def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
         if (transitionsInitialized) return thisMonitor.until(ts1).watch(ts2)
         transitionsInitialized = true
@@ -677,7 +677,7 @@ class Monitor[E] {
       * @return the state itself, but updated with the label.
       */
 
-    def label(values: Any*): state = {
+    infix def label(values: Any*): state = {
       name += values.map(_.toString).mkString("(", ",", ")")
       this
     }
@@ -836,7 +836,7 @@ class Monitor[E] {
     * @return an anonymous watch-state.
     */
 
-  protected def watch(ts: Transitions): anonymous = new anonymous {
+  protected infix def watch(ts: Transitions): anonymous = new anonymous {
     this.watch(ts)
   }
 
@@ -851,7 +851,7 @@ class Monitor[E] {
     * @return an anonymous always-state.
     */
 
-  protected def always(ts: Transitions): anonymous = new anonymous {
+  protected infix def always(ts: Transitions): anonymous = new anonymous {
     this.always(ts)
   }
 
@@ -865,7 +865,7 @@ class Monitor[E] {
     * @return an anonymous hot-state.
     */
 
-  protected def hot(ts: Transitions): anonymous = new anonymous {
+  protected infix def hot(ts: Transitions): anonymous = new anonymous {
     this.hot(ts)
   }
 
@@ -879,7 +879,7 @@ class Monitor[E] {
     * @return an anonymous wnext-state.
     */
 
-  protected def wnext(ts: Transitions): anonymous = new anonymous {
+  protected infix def wnext(ts: Transitions): anonymous = new anonymous {
     this.wnext(ts)
   }
 
@@ -893,7 +893,7 @@ class Monitor[E] {
     * @return an anonymous next-state.
     */
 
-  protected def next(ts: Transitions): anonymous = new anonymous {
+  protected infix def next(ts: Transitions): anonymous = new anonymous {
     this.next(ts)
   }
 
@@ -909,8 +909,8 @@ class Monitor[E] {
     * @return an anonymous unless-state.
     */
 
-  protected def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    def watch(ts2: Transitions): anonymous = new anonymous {
+  protected infix def unless(ts1: Transitions): Object { def watch(ts2: Transitions): state } = new {
+    infix def watch(ts2: Transitions): anonymous = new anonymous {
       this.unless(ts1).watch(ts2)
     }
   }
@@ -928,8 +928,8 @@ class Monitor[E] {
     * @return an anonymous until-state.
     */
 
-  protected def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    def watch(ts2: Transitions): anonymous = new anonymous {
+  protected infix def until(ts1: Transitions): Object { def watch(ts2: Transitions): state } = new {
+    infix def watch(ts2: Transitions): anonymous = new anonymous {
       this.until(ts1).watch(ts2)
     }
   }
@@ -1026,7 +1026,7 @@ class Monitor[E] {
    * @return set of states produced from applying the partial function `fp` to active states.
    */
 
-  protected def map(pf: PartialFunction[state, Set[state]]): Object {def orelse(otherwise: => Set[state]): Set[state]} = new {
+  protected def map(pf: PartialFunction[state, Set[state]]): Object { def orelse(otherwise: => Set[state]): Set[state]} = new {
     def orelse(otherwise: => Set[state]): Set[state] = {
       val matchingStates = states.getAllStates filter pf.isDefinedAt
       if (matchingStates.nonEmpty) {

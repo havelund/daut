@@ -29,7 +29,7 @@ class AcquireRelease extends Monitor[LockEvent] {
       case acquire(t, x) => hot {
         case acquire(_, `x`) => error
         case release(`t`, `x`) => start()
-      }.label(t, x)
+      } label(t, x)
       case release(_, _) => error
     }
 
