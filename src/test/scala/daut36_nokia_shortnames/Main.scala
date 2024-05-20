@@ -31,7 +31,7 @@ case class Ins(t: Long, u: String, db: Db, d: String) extends Ev
 
 case class Del(t: Long, u: String, db: Db, d: String) extends Ev
 
-class Ins_1_2 extends Monitor[Ev]  {
+class Ins_1_2 extends Monitor[Ev] {
   val hrs_30 = 108000
   val sec_1 = 1
 
@@ -101,16 +101,16 @@ class Del_1_2 extends Monitor[Ev] {
 
 class History(resetBound: Int, timeLimit: Long) {
   val map = collection.mutable.Map[String, Long]()
-  var counter : Int = 0
+  var counter: Int = 0
 
   def get(d: String): Option[Long] = map.get(d)
 
-  def put(d: String, t : Long) : Unit = {
+  def put(d: String, t: Long): Unit = {
     counter += 1
     if (counter == resetBound) {
       counter = 0
       map.filterInPlace {
-        case (_,t0) => t - t0 <= timeLimit
+        case (_, t0) => t - t0 <= timeLimit
       }
     }
     map.put(d, t)
@@ -136,11 +136,11 @@ class Del_1_2_opt extends Monitor[Ev] {
   always {
     case Ins(t, _, Db1, d) => I1.put(d, t)
     case Ins(t, _, Db2, d) => I2.put(d, t)
-    case Del(t, _, Db2, d) => D2.put(d,t)
+    case Del(t, _, Db2, d) => D2.put(d, t)
 
     case Del(t, _, Db1, d) if d != "[unknown]" =>
       if (D2.within(d, t)) ok else {
-        val s1 = if (I1.within(d, t) ) ok else
+        val s1 = if (I1.within(d, t)) ok else
           hot {
             case e if e.t - t > hrs_30 => error
             case Del(t1, _, Db2, `d`) if t1 - t <= hrs_30 => ok
@@ -340,6 +340,7 @@ object Test_Del_1_2 {
 
 class FastCSVReader(fileName: String) {
   // https://github.com/osiegmar/FastCSV
+
   import java.io.File
   import de.siegmar.fastcsv.reader.CsvReader
   import de.siegmar.fastcsv.reader.CsvRow
@@ -370,8 +371,8 @@ class LogReader(fileName: String) {
   val DELETE = "delete"
   var lineNr: Long = 0
 
-  def getData(line: List[String]) : Map[String,String] = {
-    var map : Map[String,String] = Map()
+  def getData(line: List[String]): Map[String, String] = {
+    var map: Map[String, String] = Map()
     for (element <- line.tail) {
       val src_rng = element.split("=").map(_.trim())
       map += (src_rng(0) -> src_rng(1))
@@ -391,7 +392,7 @@ class LogReader(fileName: String) {
         if (name == INSERT || name == DELETE) {
           val map = getData(line)
           val db = map("db")
-          if (db == "db1" || db == "db2")  {
+          if (db == "db1" || db == "db2") {
             val t = map("ts").toLong
             val u = map("u")
             val db = if (map("db") == "db1") Db1 else Db2
@@ -413,15 +414,25 @@ object VerifyNokiaLog {
   def main(args: Array[String]): Unit = {
     val csvFile = new LogReader("/Users/khavelun/Desktop/daut-logs/ldcc/ldcc.csv")
     val monitor = new Ins_1_2
+    var count: Int = 0
     // val monitor = new Del_1_2_opt
     // val monitor = new Monitors
-    Util.time ("Analysis of ldcc.csv") {
-      while (csvFile.hasNext) {
-        csvFile.next match {
-          case Some(event) =>
-            monitor.verify(event, csvFile.lineNr)
-          case None =>
-            println("done - pew!")
+    Util.time("Analysis of ldcc.csv") {
+      breakable {
+        while (csvFile.hasNext) {
+          csvFile.next match {
+            case Some(event) =>
+              count += 1
+              if (count % 100000 == 0) {
+                println(count)
+              }
+              if (count == 10000000) {
+                break
+              }
+              monitor.verify(event, csvFile.lineNr)
+            case None =>
+              println("done - pew!")
+          }
         }
       }
       monitor.end()
