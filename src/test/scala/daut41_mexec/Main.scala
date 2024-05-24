@@ -10,9 +10,21 @@ enum MEXECmd:
 
 type Time = Int
 
+// System Under Test
+
+trait SUTEvent
+case class Stop(taskId: Int) extends SUTEvent
+case class Swap(taskId: Int) extends SUTEvent
+
+class SUT {
+  def submit(event: SUTEvent): Unit = {
+    println(s"submitting $event to SUT")
+  }
+}
+
 // Abstract events:
 
-trait AbstractEvent
+sealed trait AbstractEvent
 case class Command(taskId: Int, cmdNum: Int) extends AbstractEvent
 
 // Concrete events:
@@ -23,21 +35,26 @@ case class DispatchReply(success: Boolean, valStatus: Int, taskId: Int, cmdType:
 case class CommandComplete(opCode: Int, cmplStatus: Boolean, cmdLen: Int, dispatchTime: Time,
                            cmdNum: Int, cmdType: MEXECmd, meta1: Int, meta2: Int) extends MexecEvent
 
-// Abstract monitor:
+// Monitors:
 
 class AbstractMonitor extends Monitor[AbstractEvent] {
+  val sut = SUT()
+
   always {
     case Command(taskId1, cmdNum1) => always {
       case Command(taskId2, cmdNum2) =>
         println(s"two commands: $taskId1 $cmdNum1 -> $taskId2 $cmdNum2")
-        ensure(taskId1 != taskId2 || cmdNum1 != cmdNum2)
+        if (taskId1 == taskId2 && cmdNum1 == cmdNum2) {
+          sut.submit(Stop(taskId1))
+        }
+        ensure (taskId1 != taskId2 || cmdNum1 != cmdNum2)
     }
   }
 }
 
 class ConcreteMonitor extends Monitor[MexecEvent] {
   val abstractMonitor = AbstractMonitor()
-
+  
   always {
     case DispatchRequest(taskId, cmdNum, MEXECmd.START) =>
       hot {
