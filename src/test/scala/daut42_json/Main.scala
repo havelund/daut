@@ -81,15 +81,20 @@ def parseJsonFile(filePath: String): List[Event] = {
   listBuffer.toList
 }
 
-/**************************/
-/* Event Type and Monitor */
-/**************************/
+/**************/
+/* Event Type */
+/**************/
 
 trait Event
 case class Dispatch(taskId: Int, cmdNr: Int, cmdType: String) extends Event
 case class Reply(taskId: Int, cmdNr: Int, cmdType: String) extends Event
 case class Complete(taskId: Int, cmdNr: Int, cmdType: String) extends Event
 case class Other(json: JValue) extends Event
+
+
+/***********/
+/* Monitor */
+/***********/
 
 /*
 Requirement:
