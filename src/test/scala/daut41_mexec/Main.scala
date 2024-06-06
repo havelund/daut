@@ -54,7 +54,7 @@ class AbstractMonitor extends Monitor[AbstractEvent] {
 
 class ConcreteMonitor extends Monitor[MexecEvent] {
   val abstractMonitor = AbstractMonitor()
-  
+
   always {
     case DispatchRequest(taskId, cmdNum, MEXECmd.START) =>
       hot {
