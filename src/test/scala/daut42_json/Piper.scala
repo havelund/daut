@@ -3,7 +3,8 @@ package daut42_json
 import java.io.File
 import sys.process._
 
-object Piper {
+object Piper
+
   def main(args: Array[String]): Unit =
 //    if (args.length != 1) {
 //      println("Usage: Piper <file-path>")
