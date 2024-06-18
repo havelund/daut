@@ -36,10 +36,10 @@ def jValueToString(value: JValue): String = {
   }
 }
 
-def parseJsonEvent(jValue: JValue): Event = {
+def parseJsonEvent(jValue: JValue): Event =
   val jObj = jValueToJObject(jValue)
   val id = jObj \ "id"
-  id.values match {
+  id.values match
     case "dispatch" =>
       val taskIdJValue = jObj \ "task_id"
       val cmdNrJValue = jObj \ "cmd_nr"
@@ -66,14 +66,14 @@ def parseJsonEvent(jValue: JValue): Event = {
       Complete(taskId, cmdNr, cmdType)
     case _ =>
       Other(jValue)
-  }
-}
+
 
 def parseJsonFromStdin(monitor: CommandMonitor): Unit =
   val source = Source.stdin.getLines()
 
   for (line <- source)
     if (line.nonEmpty)
+      println(s"Read: $line")
       val jValue = parse(line)
       val event = parseJsonEvent(jValue)
       monitor.apply(event)

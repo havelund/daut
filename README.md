@@ -1381,6 +1381,35 @@ CorrectLock error # 1
 Ending Daut trace evaluation for CorrectLock
 ```
 
+#### Example using piper mode for JSONL files.
+
+See [daut42_json.Main](./src/test/scala/daut42_json/Main.scala)
+
+To generate a script to run this program:
+
+```sbt
+generateRunScript daut42_json.Main run42.sh
+```
+
+Now, one can execute:
+
+```shell
+cat src/test/scala/daut42_json/file1.jsonl| ./run42.sh                                                                                                                        ✔  3239  16:33:36
+Read: {"id" :  "dispatch", "task_id" :  1, "cmd_nr" : 1, "cmd_type": "START", "args":  [1,2,3]}
+Read: {"id" :  "reply",   "task_id" :  1, "cmd_nr" : 1, "cmd_type": "START"}
+Read: {"id" :  "complete", "task_id" :  1, "cmd_nr" : 1, "cmd_type": "START", "data":  {"time":  10, "memory":  100}}
+Read: {"id" :  "dispatch", "task_id" :  2, "cmd_nr" : 1, "cmd_type": "START", "args":  [4,5,6]}
+Read: {"id" :  "reply",   "task_id" :  2, "cmd_nr" : 1, "cmd_type": "START"}
+Read: {"id" :  "complete", "task_id" :  2, "cmd_nr" : 1, "cmd_type": "START", "data":  {"time":  20, "memory":  200}}
+Read: {"id" :  "complete", "task_id" :  2, "cmd_nr" : 1, "cmd_type": "START", "data":  {"time":  20, "memory":  200}}
+
+*** ERROR
+trigger event: Dispatch(2,1,START) event number 4
+current event: Complete(2,1,START) event number 7
+CommandMonitor error # 1
+```
+
 ## Contributions
 
-Daut was developed by Klaus Havelund (<klaus.havelund@jpl.nasa.gov>).
+Daut was developed by Klaus Havelund (<klaus.havelund@jpl.nasa.gov>) 
+with contributions by Nicolas Rouquette (<nfr@jpl.nasa.gov>).
