@@ -4,17 +4,16 @@ import scala.collection.mutable.ListBuffer
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import daut.{Monitor}
+import scala.io.Source
 
 /****************/
 /* JSON Parsing */
 /****************/
 
-def jValueToList(value: JValue): List[JValue] = {
-  value match {
+def jValueToList(value: JValue): List[JValue] =
+  value match
     case JArray(items) => items
     case _ => assert(false, s"$value is not a JArray")
-  }
-}
 
 def jValueToJObject(value: JValue): JObject = {
   value match {
@@ -70,16 +69,14 @@ def parseJsonEvent(jValue: JValue): Event = {
   }
 }
 
-def parseJsonFile(filePath: String): List[Event] = {
-  val jsonArray = parse(scala.io.Source.fromFile(filePath).getLines().mkString)
-  val jsonList = jValueToList(jsonArray)
-  val listBuffer = new ListBuffer[Event]()
-  for (item <- jsonList) {
-    val event = parseJsonEvent(item)
-    listBuffer += event
-  }
-  listBuffer.toList
-}
+def parseJsonFromStdin(monitor: CommandMonitor): Unit =
+  val source = Source.stdin.getLines()
+
+  for (line <- source)
+    if (line.nonEmpty)
+      val jValue = parse(line)
+      val event = parseJsonEvent(jValue)
+      monitor.apply(event)
 
 /**************/
 /* Event Type */
@@ -127,13 +124,8 @@ class CommandMonitor extends Monitor[Event] {
 /* Main program */
 /****************/
 
-object Main {
-  def main(args: Array[String]): Unit = {
-    val file = "file1.json"
-    val dautPath = System.getProperty("user.dir")
-    val filePath = s"$dautPath/src/test/scala/daut42_json/$file"
-    val trace = parseJsonFile(filePath)
-    val monitor = CommandMonitor()
-    monitor.apply(trace)
-  }
-}
+object Main:
+  def main(args: Array[String]): Unit =
+    val monitor = new CommandMonitor()
+    parseJsonFromStdin(monitor)
+
