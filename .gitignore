@@ -1,9 +1,13 @@
 .DS_Store
+.bloop/
+.bsp/
 .idea/
+.metals/
 logs/
 out/
 project/
 target/
 local-only
 /src/test/scala/daut37_pycontract/log_msl_timed.csv
-/.bsp/sbt.json
+*.sh
+
