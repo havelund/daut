@@ -10,4 +10,5 @@ target/
 local-only
 /src/test/scala/daut37_pycontract/log_msl_timed.csv
 *.sh
-
+/src/test/scala/daut43_endurance/
+/.bsp/sbt.json
