@@ -160,18 +160,22 @@ class Monitor[E] {
       */
 
     def applyEvent(event: E): Unit = {
+      var transitionTriggered: Boolean = false
       val key = keyOf(event)
       key match {
         case None =>
           applyEventToStateSet(event)(mainStates) match {
             case None =>
-            case Some(newStates) => mainStates = newStates
+            case Some(newStates) =>
+              mainStates = newStates
+              transitionTriggered = true
           }
           for ((index, ss) <- indexedStates) {
             applyEventToStateSet(event)(ss) match {
               case None =>
               case Some(newStates) =>
                 indexedStates += (index -> newStates)
+                transitionTriggered = true
             }
           }
         case Some(index) =>
@@ -180,7 +184,11 @@ class Monitor[E] {
             case None =>
             case Some(newStates) =>
               indexedStates += (index -> newStates)
+              transitionTriggered = true
           }
+      }
+      if (transitionTriggered && SHOW_TRANSITIONS) {
+        println(s"@[${monitorName}] $event")
       }
     }
 
@@ -299,6 +307,25 @@ class Monitor[E] {
     */
 
   var STOP_ON_ERROR: Boolean = false
+
+  /**
+    * Option, which when set to true will cause events to be printed that trigger transitions.
+    * Default value is false.
+    */
+
+  var SHOW_TRANSITIONS: Boolean = false
+
+  /**
+    * When called with `flag` being true, events that trigger transitions will be automaticallu printed.
+    * @param flag when true events will be printed. If this method is not called with `flag`
+    *             being true, then no events will be printed automatically.
+    * @return the current monitor, allowing for method chaining.
+    */
+
+  def showTransitions(flag: Boolean = true): Monitor[E] = {
+    SHOW_TRANSITIONS = flag
+    this
+  }
 
   /**
     * Launches the monitors provided as var-argument as sub-monitors of this monitor.
