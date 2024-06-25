@@ -326,7 +326,8 @@ class Monitor[E] {
   var SHOW_TRANSITIONS: Boolean = false
 
   /**
-    * When called with `flag` being true, events that trigger transitions will be automaticallu printed.
+    * When called with `flag` being true, events that trigger transitions in this monitor,
+    * and all sub monitors, will be automaticallu printed.
     * @param flag when true events will be printed. If this method is not called with `flag`
     *             being true, then no events will be printed automatically.
     * @return the current monitor, allowing for method chaining.
@@ -334,6 +335,9 @@ class Monitor[E] {
 
   def showTransitions(flag: Boolean = true): Monitor[E] = {
     SHOW_TRANSITIONS = flag
+    for (monitor <- monitors) {
+      monitor.showTransitions(flag)
+    }
     this
   }
 

@@ -711,12 +711,12 @@ class ReleaseAcquired extends Monitor[Event] {
 }
 
 class Monitors extends Monitor[Event] {
-  monitor(new AcquireRelease, new ReleaseAcquired) // monitor sub-monitors
+  monitor(new AcquireRelease, new ReleaseAcquired) // monitor submonitors
 }
 
 object Main {
   def main(args: Array[String]) {
-    val m = new Monitors // now monitoring two sub-monitors
+    val m = new Monitors // now monitoring two submonitors
     m.verify(acquire(1, 10))
     m.verify(release(1, 10))
     m.end()
@@ -922,7 +922,7 @@ if any, perform a proper action:
 ```scala
 object Main {
   def main(args: Array[String]) {
-    val m = new Monitors // now monitoring two sub-monitors
+    val m = new Monitors // now monitoring two submonitors
     m.verify(acquire(1, 10))
     m.verify(release(1, 10))
     m.end()
@@ -1069,7 +1069,7 @@ class ReceiveWhenOpen extends NewMonitor[RadioEvent] {
 }
 ```
 
-We now create a monitor containing this monitor and an instance of the `Response` monitor as sub-monitors:
+We now create a monitor containing this monitor and an instance of the `Response` monitor as submonitors:
 
 ```scala
 class AllMonitors extends Monitor[RadioEvent] {
@@ -1156,7 +1156,7 @@ class CorrectLock extends SlowLockMonitor {
 
 Note that we have added the `label(t,x)` to the `hot` state. This will cause the debug output to contain terms such as `hot(1,100)`. Next, in the main program, we set the `DEBUG` flag to true:
 
-```
+```scala
 object Main {
   def main(args: Array[String]) {
     val m = new CorrectLock
@@ -1381,7 +1381,47 @@ CorrectLock error # 1
 Ending Daut trace evaluation for CorrectLock
 ```
 
-#### Example using piper mode for JSONL files.
+## Other Helper Functions
+
+The `Monitor` class provides a collection of methods which can help viewing the results of a run. 
+These are explained in the following
+
+#### Showing Transitions
+
+The following method when called on a monitorobject with `flag` being true (default parameter value) will cause events to be printed when triggering transitions in the monitor, and all its submonitors. 
+
+```scala
+def showTransitions(flag: Boolean = true): Monitor[E]
+```
+
+Note, however, that the submonitors must have been added already for a call of this
+method to have effect on the submonitors.
+
+#### Recording Messages
+
+The following method allows to add arbitrary text messages as recordings in a monitor:
+
+```scala
+def record(message: String): Unit
+```
+
+At any point in time the current recordings of a monitor, and all its submonitors, can be extracted with the method:
+
+```scala
+def getRecordings(): List[String]
+```
+
+#### Printing Monitor States
+
+The following method prints the internal memory of a monitor:
+
+```scala
+def printStates(): Unit
+```
+
+## Using Piper Mode for JSONL files.
+
+Daut can be applied to read JSON objects from an input file written to by a concurrentlty executing task (online monitoring).
 
 See [daut42_json.Main](./src/test/scala/daut42_json/Main.scala)
 
