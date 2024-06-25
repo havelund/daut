@@ -301,10 +301,20 @@ class Monitor[E] {
   var eventNumber: Long = 0
 
   /**
+    * Messages recorded by calls of the `record` method.
+    */
+
+  private var recordings: List[String] = List()
+
+  /**
     * Option, which when set to true will cause monitoring to stop the first time
     * a specification violation is encountered. Otherwise monitoring will continue.
     * Default value is false.
     */
+
+  def record(message: String): Unit = {
+    recordings = recordings :+ s"- Recording [${monitorName}] $message"
+  }
 
   var STOP_ON_ERROR: Boolean = false
 
@@ -1404,6 +1414,19 @@ class Monitor[E] {
     }
     println()
     for (m <- monitors) m.printStates()
+  }
+
+  /**
+    * Returns all recordings for this monitor and all of its sub monitors.
+    * @return the recordings.
+    */
+
+  def getRecordings(): List[String] = {
+    var allRecordings : List[String] = recordings
+    for (monitor <- monitors) {
+      allRecordings = allRecordings ++ monitor.getRecordings()
+    }
+    allRecordings
   }
 
   /**
