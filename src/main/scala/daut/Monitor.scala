@@ -1362,7 +1362,7 @@ class Monitor[E] {
     * Prints the current states of the monitor, and its sub-monitors.
     */
 
-  private def printStates(): Unit = {
+  def printStates(): Unit = {
     println(s"--- $monitorName:")
     println("[memory] ")
     for (s <- states.getMainStates) {
