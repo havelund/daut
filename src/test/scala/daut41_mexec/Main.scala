@@ -3,13 +3,6 @@ package daut41_mexec
 
 import daut.{Monitor}
 
-enum MEXECmd:
-  case START
-  case CLEANUP
-  case STOP
-
-type Time = Int
-
 // System Under Test
 
 trait SUTEvent
@@ -29,11 +22,10 @@ case class Command(taskId: Int, cmdNum: Int) extends AbstractEvent
 
 // Concrete events:
 
-trait MexecEvent
-case class DispatchRequest(taskId: Int, cmdNum: Int, cmdType: MEXECmd) extends MexecEvent
-case class DispatchReply(success: Boolean, valStatus: Int, taskId: Int, cmdType: MEXECmd) extends MexecEvent
-case class CommandComplete(opCode: Int, cmplStatus: Boolean, cmdLen: Int, dispatchTime: Time,
-                           cmdNum: Int, cmdType: MEXECmd, meta1: Int, meta2: Int) extends MexecEvent
+sealed trait ConcreteEvent
+case class DispatchRequest(taskId: Int, cmdNum: Int) extends ConcreteEvent
+case class DispatchReply(taskId: Int, cmdNum: Int) extends ConcreteEvent
+case class CommandComplete(taskId: Int, cmdNum: Int) extends ConcreteEvent
 
 // Monitors:
 
@@ -52,18 +44,18 @@ class AbstractMonitor extends Monitor[AbstractEvent] {
   }
 }
 
-class ConcreteMonitor extends Monitor[MexecEvent] {
-  val abstractMonitor = AbstractMonitor()
+class ConcreteMonitor extends Monitor[ConcreteEvent] {
+  val abstractMonitor = monitorAbstraction(AbstractMonitor())
 
   always {
-    case DispatchRequest(taskId, cmdNum, MEXECmd.START) =>
+    case DispatchRequest(taskId, cmdNum) =>
       hot {
-        case DispatchRequest(`taskId`, _, _) => error
-        case DispatchReply(true, valStatus, `taskId`, MEXECmd.START) =>
+        case DispatchRequest(`taskId`, `cmdNum`) => error
+        case DispatchReply(`taskId`, `cmdNum`) =>
           hot {
-            case CommandComplete(opCode, cmplStatus, cmdLen, dispatchTime, `cmdNum`, MEXECmd.START, meta1, meta2) =>
+            case CommandComplete(`taskId`, `cmdNum`) =>
               abstractMonitor(Command(taskId, cmdNum))
-              println(s"$taskId $cmdNum $valStatus $opCode $cmplStatus $cmdLen $dispatchTime $meta1 $meta2")
+              println(s"$taskId $cmdNum")
           }
       }
   }
@@ -71,18 +63,18 @@ class ConcreteMonitor extends Monitor[MexecEvent] {
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val trace: List[MexecEvent] = List(
-      DispatchRequest(1, 2, MEXECmd.START),
-      DispatchReply(true, 10, 1, MEXECmd.START),
-      CommandComplete(42, false, 20, 2030, 2, MEXECmd.START, 100, 200),
+    val trace: List[ConcreteEvent] = List(
+      DispatchRequest(1, 1),
+      DispatchReply(1, 1),
+      CommandComplete(1, 1),
 
-      DispatchRequest(3, 4, MEXECmd.START),
-      DispatchReply(true, 10, 3, MEXECmd.START),
-      CommandComplete(42, true, 20, 2032, 4, MEXECmd.START, 100, 200),
+      DispatchRequest(1, 2),
+      DispatchReply(1, 2),
+      CommandComplete(1, 2),
 
-      DispatchRequest(1, 2, MEXECmd.START),
-      DispatchReply(true, 10, 1, MEXECmd.START),
-      CommandComplete(42, false, 20, 2030, 2, MEXECmd.START, 100, 200)
+      DispatchRequest(1, 2),
+      DispatchReply(1, 2),
+      CommandComplete(1, 2)
     )
 
     val monitor = new ConcreteMonitor

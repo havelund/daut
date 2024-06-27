@@ -264,6 +264,14 @@ class Monitor[E] {
   private var monitors: List[Monitor[E]] = List()
 
   /**
+    * A monitor can define other monitors that it sends events to. Such a monitor is stored
+    * in the following variable with the single purpose to allow the `end()` method of
+    * this monitor to call the `end()` method on the other monitors.
+    */
+
+  private var abstractMonitors: List[Monitor[_]] = List()
+
+  /**
     * The active states of the monitor, excluding those of its sub-monitors.
     */
 
@@ -287,6 +295,13 @@ class Monitor[E] {
     */
 
   private var initializing: Boolean = true
+
+  /**
+    * Set to true when the `end()` method has been called. Used to avoid multiple calls of
+    * `end()` on monitors stored in the `abstractMonitors` variable.
+    */
+
+  private var endCalled: Boolean = false
 
   /**
     * Number of violation of the specification encountered.
@@ -354,6 +369,26 @@ class Monitor[E] {
       monitor.monitorAtTop = false
     }
     this.monitors ++= monitors
+  }
+
+  /**
+    * Register a monitor as being communicated to from the current monitor. Usually such a monitor
+    * functions as an abstraction (an abstract monitor), which can verify higher level events produced by the 
+    * current monitor, as well as by other monitors. That is, an abstract monitor can be registered as 
+    * such on several monitors. It is the responsibility of the current monitor to send events to it.
+    * Whenever `end()` is called on the current monitor it is also called on its abstract monitors, as it is
+    * called on submonitors (while avoiding duplicate calls of `end()`). The reason for calling this 
+    * method in fact is to ensure that `end()` is called automatically on the abstract monitor.
+    *
+    * @param monitor the abstract monitor
+    * @tparam E the event type of the abstract monitor, which can be different from the event type of
+    *           the current monitor, and it usually is.
+    * @return the abstract monitor, so that the current monitor can store a reference to it in a variable.
+    */
+
+  def monitorAbstraction[E](monitor: Monitor[E]): Monitor[E] = {
+    abstractMonitors = abstractMonitors :+ monitor
+    monitor
   }
 
   /**
@@ -1317,23 +1352,29 @@ class Monitor[E] {
     */
 
   def end(): this.type = {
-    debug(s"Ending Daut trace evaluation for $monitorName")
-    val theEndStates = states.getAllStates
-    val hotStates = theEndStates filter (!_.isFinal)
-    if (hotStates.nonEmpty) {
-      println()
-      println(s"*** Non final Daut $monitorName states:")
-      println()
-      for (hotState <- hotStates) {
-        print(hotState)
-        reportErrorAtEnd(hotState.initialEvent)
+    if (!endCalled) {
+      endCalled = true
+      debug(s"Ending Daut trace evaluation for $monitorName")
+      val theEndStates = states.getAllStates
+      val hotStates = theEndStates filter (!_.isFinal)
+      if (hotStates.nonEmpty) {
         println()
+        println(s"*** Non final Daut $monitorName states:")
+        println()
+        for (hotState <- hotStates) {
+          print(hotState)
+          reportErrorAtEnd(hotState.initialEvent)
+          println()
+        }
       }
+      for (monitor <- monitors) {
+        monitor.end()
+      }
+      for (monitor <- abstractMonitors) {
+        monitor.end()
+      }
+      println(s"Monitor $monitorName detected $errorCount errors!")
     }
-    for (monitor <- monitors) {
-      monitor.end()
-    }
-    println(s"Monitor $monitorName detected $errorCount errors!")
     this
   }
 
