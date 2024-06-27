@@ -789,6 +789,7 @@ val abstractMonitor = AbstractMonitor()
 
 This would have the exact same effect, except that `end()` would not be automatically called.
 
+**Note:** multiple monitors can send to the same abstract monitor.
 
 ## Using Indexing to Speed up Monitors
 
