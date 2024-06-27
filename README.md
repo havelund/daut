@@ -328,7 +328,40 @@ clarity to sub-concepts.
 
 This "state machine" contains no loops. The next example introduces a looping state machine, with data.
 
-## State Machines using Functions that Return States
+## Transitions Returning a Set of States
+
+As mentioned already, a transition technically returns a set of states, each of which has to lead to success. Effectively, this set represents a _conjunction_: all these result states have to lead to succces. As an example of how this concept can be utilized for spceification of properties, consider the following property:
+
+- _"A task acquiring a lock should eventually release it. A task can only acquire the same lock once"_. 
+
+This property can be formulated as the following monitor:
+
+```scala
+class AcquireRelease extends Monitor[LockEvent] {
+  always {
+    case acquire(t, x) =>
+      Set(
+        doRelease(t, x),
+        dontAcquire(t,x)
+      )
+  }
+
+  def doRelease(t: Int, x: Int) : state =
+    hot {
+      case release(`t`,`x`) => ok
+    }
+
+  def dontAcquire(t: Int, x: Int) : state =
+    watch {
+      case acquire(`t`,`x`) => error("lock acquired again by same task")
+    }
+}
+```
+
+The `AcquireRelease` monitor returns a set of states upon observing an `acquire` event.
+The first state (returned by `doRelease`) checks that the `release` event eventually follows. The second state (returned by `dontAcquire`) checks that another acquisition of that lock by that task does not occur.
+
+## Looping State Machines using Functions that Return States
 
 In this example, we shall illustrate a state machine with a loop, using functions to represent the individual
 states, which by the way in this case are parameterized with data, a feature not supported by text book state machines, including extended state machines.
