@@ -1,8 +1,8 @@
 # Daut
 
-Version 1.5.7
+Version 2.0
 
-Daut is programmed in [Scala](https://www.scala-lang.org) and developed on a Mac.
+Daut is programmed in [Scala](https://www.scala-lang.org).
 
 ## Monitoring Data Streams with Data Automata
 
@@ -1044,7 +1044,46 @@ class AcquireReleaseTextBookAutomaton extends Monitor[LockEvent] {
 }
 ```
 
-**Note:** One has to ensure that only events relevant for the property are submitted to the monitor in order to use the states `wnext` and `next`.
+**Note:** One has to ensure that only events relevant for the property are submitted to the monitor in order to use the states `wnext` and `next`. See the next section.
+
+## Monitoring Only Relevant Events
+
+The approach described just above only works if the events submitted to the monitor are exactly the events mentioned in the automaton. If this is not the case we have to filter out the irrelevant events. Consider for example that the `LockEvent` type was defined as originally, containing also a `CANCEL` event:
+
+```scala
+trait LockEvent
+case class acquire(t: Int, x: Int) extends LockEvent
+case class release(t: Int, x: Int) extends LockEvent
+case object CANCEL extends LockEvent
+```
+However, we do not want to take this event into consideration.
+For the above automaton to work we must filter out the `CANCEL` event. This can be done by overriding the `relevant` method, as done in the following version of the monitor.
+
+
+```scala
+class AcquireReleaseTextBookLogic extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  override def relevant(event: LockEvent): Boolean = {
+    event match {
+      case acquire(_, _) | release(_, _) => true
+      case _ => false
+    }
+  }
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => doRelease(t, x)
+    }
+
+  def doRelease(t: Int, x: Int) =
+    next {
+      case release(`t`, `x`) => doAcquire()
+    } 
+
+  doAcquire()
+}
+```
 
 ## How to React to Errors
 

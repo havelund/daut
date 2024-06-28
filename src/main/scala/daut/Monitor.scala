@@ -250,6 +250,18 @@ class Monitor[E] {
   protected def keyOf(event: E): Option[Any] = None
 
   /**
+    * Determines the relevance of an event for the monitor.
+    * The method has a default definition returning true for all events. It
+    * can be overridden by the user. It can for example be used together with
+    * indexing to write textbook automata.
+    *
+    * @param event the event.
+    * @return true iff the event is relevant for the monitor.
+    */
+
+  protected def relevant(event: E): Boolean = true
+
+  /**
     * The name of the monitor, derived from its class name.
     */
 
@@ -1334,8 +1346,10 @@ class Monitor[E] {
     if (initializing) initializing = false
     verifyBeforeEvent(event)
     if (monitorAtTop) debug("\n===[" + event + "]===\n")
-    states.applyEvent(event)
-    invariants foreach { case (e, inv) => check(inv(()), e) }
+    if (relevant(event)) {
+      states.applyEvent(event)
+      invariants foreach { case (e, inv) => check(inv(()), e) }
+    }
     for (monitor <- monitors) {
       monitor.verify(event)
     }
