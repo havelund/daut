@@ -206,7 +206,7 @@ event, where the `x` is the same as was previously acquired (caused by the quote
 
      release(`t`,`x`)
      
-event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor.
+event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor. An additional state `stay` as a result of a transition indicates that we stay in the current state.
 
 #### Applying the Monitor
 
@@ -261,8 +261,6 @@ def wnext(ts: Transitions): state  // one of the transtions must fire next, if t
 
 Note: these functions actually return an object of a subclass (named
 `anonymous`) of class `state`, but that is not important here.
-
-An additional state `stay` as a result of a transition indicates that we stay in the current state.
 
 #### From States to Sets of States and Other Magic
 
@@ -1004,8 +1002,49 @@ case release(_, _) => error
 as part of the `start` state, which will trigger an error in case a `release` event arrives before an `acquire` event for a lock.
 
 This is fundamentally how slicing-based systems such as 
-[MOP](http://fsl.cs.illinois.edu/index.php/JavaMOP4) 
-model past time properties.
+[MOP](https://javamop.coecis.cornell.edu/resources) 
+model properties.
+
+## Writing Textbook Automata using Indexing
+
+In the above example, we used the states `hot` and `watch`. These are states with a UML-like semantics: we stay in these states until we see an event that matches one of the outgoing transitions. If we instead use the states `wnext` (if there is a next event, it has to match one of the transitions) and `next` (there has to be a next event it it has to match one of the transitions), we can formulate a monitor without having to indicate the wrong transitions explicitly, it follows indirectly from the semantics of `wnext` and `next`, just like in classical automata theory:
+
+```scala
+class AcquireReleaseTextBookLogic extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => next {
+        case release(`t`, `x`) => doAcquire()
+      }
+    }
+
+  doAcquire()
+}
+```
+
+We can also name the inner anonymous state, let us name it `doRelease`, arriving the following automaton, with equivalent semantics:
+
+```scala
+class AcquireReleaseTextBookAutomaton extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => doRelease(t, x)
+    }
+
+  def doRelease(t: Int, x: Int) =
+    next {
+      case release(`t`, `x`) => doAcquire()
+    } label(t, x)
+
+  doAcquire()
+}
+```
+
+**Note:** One has to ensure that only events relevant for the property are submitted to the monitor in order to use the states `wnext` and `next`.
 
 ## How to React to Errors
 
