@@ -41,7 +41,7 @@ class ABCDMonitor extends MissionMonitor {
   wnext {
     case A(t) => next { // if an A
       case B(`t`) => next { // then one B
-        case C(`t`) => next  { // thenone or more Cs, the first here
+        case C(`t`) => next  { // then one or more Cs, the first here
           case C(`t`) => stay // the rest of the Cs here, note 'stay'
           case D(`t`) => ok // finally a D gets us out of that loop
         } label("waiting for D", t) // labels are just for debugging
