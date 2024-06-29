@@ -3,11 +3,12 @@ package daut44_hashmaps
 import daut._
 
 /**
-  * A task acquiring a lock should eventually release it. At most one task
-  * can acquire a lock at a time. A task cannot release a lock it has not acquired.
+  * An A should be followed by one B, then one or more Cs, and then one D.
+  * and nothing else, for a particular task id t. This process is only to
+  * occur once.
   *
-  * This monitor illustrates the use of indexing to model past time properties, instead
-  * of using case classes (facts) to model the past as was done in example `daut4_rules`.
+  * This monitor illustrates the use of indexing, relevance filter, and wnext and next states,
+  * to model a textbook automaton.
   */
 
 trait Event
