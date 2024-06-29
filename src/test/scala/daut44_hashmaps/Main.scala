@@ -10,87 +10,54 @@ import daut._
   * of using case classes (facts) to model the past as was done in example `daut4_rules`.
   */
 
-trait LockEvent
+trait Event
+case class A(t: Int) extends Event
+case class B(t: Int) extends Event
+case class C(t: Int) extends Event
+case class D(t: Int) extends Event
+case class E(t: Int) extends Event
 
-case class acquire(t: Int, x: Int) extends LockEvent
-
-case class release(t: Int, x: Int) extends LockEvent
-
-class AcquireRelease extends Monitor[LockEvent] {
-  override def keyOf(event: LockEvent): Option[Int] = {
+class MissionMonitor extends Monitor[Event] {
+  override def keyOf(event: Event): Option[Int] = {
     event match {
-      case acquire(_, x) => Some(x)
-      case release(_, x) => Some(x)
+      case A(t) => Some(t)
+      case B(t) => Some(t)
+      case C(t) => Some(t)
+      case D(t) => Some(t)
+      case E(t) => Some(t)
     }
   }
 
-  def start(): state =
-    watch {
-      case acquire(t, x) => hot {
-        case acquire(_, `x`) => error
-        case release(`t`, `x`) => start()
-      } label(t, x)
-      case release(_, _) => error
+  override def relevant(event: Event): Boolean = {
+    event match {
+      case E(_) => false
+      case _ => true
     }
-
-  start()
+  }
 }
 
-class AcquireReleaseTextBookAutomaton extends Monitor[LockEvent] {
-  override def keyOf(event: LockEvent): Option[Int] = {
-    event match {
-      case acquire(_, x) => Some(x)
-      case release(_, x) => Some(x)
-    }
+class ABCDMonitor extends MissionMonitor {
+  wnext {
+    case A(t) => next { // if an A
+      case B(`t`) => next { // then one B
+        case C(`t`) => next  { // thenone or more Cs, the first here
+          case C(`t`) => stay // the rest of the Cs here, note 'stay'
+          case D(`t`) => ok // finally a D gets us out of that loop
+        } label("waiting for D", t) // labels are just for debugging
+      } label("waiting for first C", t)
+    } label("waiting for B", t)
   }
-
-  def doAcquire(): state =
-    wnext {
-      case acquire(t, x) => doRelease(t, x)
-    }
-
-  def doRelease(t: Int, x: Int) =
-    next {
-      case release(`t`, `x`) => doAcquire()
-    } label(t, x)
-
-  doAcquire()
-}
-
-class AcquireReleaseTextBookLogic extends Monitor[LockEvent] {
-  override def keyOf(event: LockEvent): Option[Int] = {
-    event match {
-      case acquire(_, x) => Some(x)
-      case release(_, x) => Some(x)
-    }
-  }
-
-  override def relevant(event: LockEvent): Boolean = {
-    event match {
-      case acquire(_, _) | release(_, _) => true
-      case _ => false
-    }
-  }
-
-  def doAcquire(): state =
-    wnext {
-      case acquire(t, x) => next {
-        case release(`t`, `x`) => doAcquire()
-      } label(t, x)
-    }
-
-  doAcquire()
 }
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val m = new AcquireReleaseTextBookLogic
+    val m = new ABCDMonitor
     DautOptions.DEBUG = true
-    m(acquire(1, 10))
-    m(acquire(2, 20))
-    m(release(1, 10))
-    m(release(2, 20))
+    m(A(1))
+    m(B(1))
+    m(C(1))
+    m(C(1))
+    m(D(1))
     m.end()
   }
 }
-
