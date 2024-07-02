@@ -36,13 +36,53 @@ class AcquireRelease extends Monitor[LockEvent] {
   start()
 }
 
+class AcquireReleaseTextBookAutomaton extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = {
+    event match {
+      case acquire(_, x) => Some(x)
+      case release(_, x) => Some(x)
+    }
+  }
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => doRelease(t, x)
+    }
+
+  def doRelease(t: Int, x: Int) =
+    next {
+      case release(`t`, `x`) => doAcquire()
+    } label(t, x)
+
+  doAcquire()
+}
+
+class AcquireReleaseTextBookLogic extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = {
+    event match {
+      case acquire(_, x) => Some(x)
+      case release(_, x) => Some(x)
+    }
+  }
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => next {
+        case release(`t`, `x`) => doAcquire()
+      } label(t, x)
+    }
+
+  doAcquire()
+}
+
 object Main {
   def main(args: Array[String]): Unit = {
-    val m = new AcquireRelease
+    val m = new AcquireReleaseTextBookLogic
     DautOptions.DEBUG = true
     m(acquire(1, 10))
     m(acquire(2, 20))
-    m(release(3, 30))
+    m(release(1, 10))
+    m(release(2, 20))
     m.end()
   }
 }

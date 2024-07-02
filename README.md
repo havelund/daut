@@ -1,8 +1,8 @@
 # Daut
 
-Version 1.5.6
+Version 2.0
 
-Daut is programmed in [Scala](https://www.scala-lang.org) and developed on a Mac.
+Daut is programmed in [Scala](https://www.scala-lang.org).
 
 ## Monitoring Data Streams with Data Automata
 
@@ -206,7 +206,7 @@ event, where the `x` is the same as was previously acquired (caused by the quote
 
      release(`t`,`x`)
      
-event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor.
+event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor. An additional state `stay` as a result of a transition indicates that we stay in the current state.
 
 #### Applying the Monitor
 
@@ -261,8 +261,6 @@ def wnext(ts: Transitions): state  // one of the transtions must fire next, if t
 
 Note: these functions actually return an object of a subclass (named
 `anonymous`) of class `state`, but that is not important here.
-
-An additional state `stay` as a result of a transition indicates that we stay in the current state.
 
 #### From States to Sets of States and Other Magic
 
@@ -328,7 +326,40 @@ clarity to sub-concepts.
 
 This "state machine" contains no loops. The next example introduces a looping state machine, with data.
 
-## State Machines using Functions that Return States
+## Transitions Returning a Set of States
+
+As mentioned already, a transition technically returns a set of states, each of which has to lead to success. Effectively, this set represents a _conjunction_: all these result states have to lead to succces. As an example of how this concept can be utilized for spceification of properties, consider the following property:
+
+- _"A task acquiring a lock should eventually release it. A task can only acquire the same lock once"_. 
+
+This property can be formulated as the following monitor:
+
+```scala
+class AcquireRelease extends Monitor[LockEvent] {
+  always {
+    case acquire(t, x) =>
+      Set(
+        doRelease(t, x),
+        dontAcquire(t,x)
+      )
+  }
+
+  def doRelease(t: Int, x: Int) : state =
+    hot {
+      case release(`t`,`x`) => ok
+    }
+
+  def dontAcquire(t: Int, x: Int) : state =
+    watch {
+      case acquire(`t`,`x`) => error("lock acquired again by same task")
+    }
+}
+```
+
+The `AcquireRelease` monitor returns a set of states upon observing an `acquire` event.
+The first state (returned by `doRelease`) checks that the `release` event eventually follows. The second state (returned by `dontAcquire`) checks that another acquisition of that lock by that task does not occur.
+
+## Looping State Machines using Functions that Return States
 
 In this example, we shall illustrate a state machine with a loop, using functions to represent the individual
 states, which by the way in this case are parameterized with data, a feature not supported by text book state machines, including extended state machines.
@@ -682,7 +713,7 @@ The `invariant` function takes as argument a Boolean expression (call by name) a
 
 The example illustrates how the temporal logic can be combined with programming. This paradigm of combining programming and temporal logic/state machines can of course be carried much furher.
 
-## Multiple Monitors
+## Monitor Hierarchies
 
 Monitors can be combined into a single monitor. For example, the following is possible:
 
@@ -725,6 +756,71 @@ object Main {
 ```
 
 This allows to build a hierarchy of monitors, which might be useful for grouping.
+
+## Monitor Networks
+
+Above we saw how monitors can be combined in a modular manner to form a hierarchy, with
+the sole purpose to just group monitors, without any added semantics. 
+We here describe an alternative way of combining monitors in a network, where one monitor can send events to other monitors. We call such other monitors for _abstract monitors_, since the typical usecase is that a "concrete" monitor receives lower level events, and then sends higher level events to the abstract monitor when a certain sequence of lower level events has been detected. The following example illustrates this.
+
+First we define the abstract monitor, including the abstract events we want to send to it. It checks that different commands always have different task ids or command numbers:
+
+```scala
+// Abstract events:
+
+sealed trait AbstractEvent
+case class Command(taskId: Int, cmdNum: Int) extends AbstractEvent
+
+class AbstractMonitor extends Monitor[AbstractEvent] {
+  always {
+    case Command(taskId1, cmdNum1) => always {
+      case Command(taskId2, cmdNum2) =>
+        ensure (taskId1 != taskId2 || cmdNum1 != cmdNum2)
+    }
+  }
+}
+```
+
+So what are commands? they are here generated by a lower level monitor, which monitors lower
+level events, which together represent a command execution. This concrete monitor
+creates an instance of the abstract monitor and sends `Command` events to it.
+
+```scala
+// Concrete events:
+
+sealed trait ConcreteEvent
+case class DispatchRequest(taskId: Int, cmdNum: Int) extends ConcreteEvent
+case class DispatchReply(taskId: Int, cmdNum: Int) extends ConcreteEvent
+case class CommandComplete(taskId: Int, cmdNum: Int) extends ConcreteEvent
+
+class ConcreteMonitor extends Monitor[ConcreteEvent] {
+  val abstractMonitor = monitorAbstraction(AbstractMonitor())
+
+  always {
+    case DispatchRequest(taskId, cmdNum) =>
+      hot {
+        case DispatchReply(`taskId`, `cmdNum`) =>
+          hot {
+            case CommandComplete(`taskId`, `cmdNum`) =>
+              abstractMonitor(Command(taskId, cmdNum))
+              println(s"command $taskId $cmdNum")
+          }
+      }
+  }
+}
+
+```
+
+The abstract monitor is created by a call of the `monitorAbstraction` method. This call ensures that when `end()` is called on the concrete monitor, it is also automatically
+called on the abstract monitor. It would also be possible to write:
+
+```scala
+val abstractMonitor = AbstractMonitor()
+```
+
+This would have the exact same effect, except that `end()` would not be automatically called.
+
+**Note:** multiple monitors can send to the same abstract monitor.
 
 ## Using Indexing to Speed up Monitors
 
@@ -906,8 +1002,88 @@ case release(_, _) => error
 as part of the `start` state, which will trigger an error in case a `release` event arrives before an `acquire` event for a lock.
 
 This is fundamentally how slicing-based systems such as 
-[MOP](http://fsl.cs.illinois.edu/index.php/JavaMOP4) 
-model past time properties.
+[MOP](https://javamop.coecis.cornell.edu/resources) 
+model properties.
+
+## Writing Textbook Automata using Indexing
+
+In the above example, we used the states `hot` and `watch`. These are states with a UML-like semantics: we stay in these states until we see an event that matches one of the outgoing transitions. If we instead use the states `wnext` (if there is a next event, it has to match one of the transitions) and `next` (there has to be a next event it it has to match one of the transitions), we can formulate a monitor without having to indicate the wrong transitions explicitly, it follows indirectly from the semantics of `wnext` and `next`, just like in classical automata theory:
+
+```scala
+class AcquireReleaseTextBookLogic extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => next {
+        case release(`t`, `x`) => doAcquire()
+      }
+    }
+
+  doAcquire()
+}
+```
+
+We can also name the inner anonymous state, let us name it `doRelease`, arriving the following automaton, with equivalent semantics:
+
+```scala
+class AcquireReleaseTextBookAutomaton extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => doRelease(t, x)
+    }
+
+  def doRelease(t: Int, x: Int) =
+    next {
+      case release(`t`, `x`) => doAcquire()
+    } label(t, x)
+
+  doAcquire()
+}
+```
+
+**Note:** One has to ensure that only events relevant for the property are submitted to the monitor in order to use the states `wnext` and `next`. See the next section.
+
+## Monitoring Only Relevant Events
+
+The approach described just above only works if the events submitted to the monitor are exactly the events mentioned in the automaton. If this is not the case we have to filter out the irrelevant events. Consider for example that the `LockEvent` type was defined as originally, containing also a `CANCEL` event:
+
+```scala
+trait LockEvent
+case class acquire(t: Int, x: Int) extends LockEvent
+case class release(t: Int, x: Int) extends LockEvent
+case object CANCEL extends LockEvent
+```
+However, we do not want to take this event into consideration.
+For the above automaton to work we must filter out the `CANCEL` event. This can be done by overriding the `relevant` method, as done in the following version of the monitor.
+
+
+```scala
+class AcquireReleaseTextBookLogic extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  override def relevant(event: LockEvent): Boolean = {
+    event match {
+      case acquire(_, _) | release(_, _) => true
+      case _ => false
+    }
+  }
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => doRelease(t, x)
+    }
+
+  def doRelease(t: Int, x: Int) =
+    next {
+      case release(`t`, `x`) => doAcquire()
+    } 
+
+  doAcquire()
+}
+```
 
 ## How to React to Errors
 
