@@ -27,7 +27,10 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.10"
 )
 
-
+libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-effect" % "3.3.12",
+  "org.typelevel" %% "cats-effect-std" % "3.3.12"
+)
 
 scalacOptions += "-explain"
 scalacOptions += "-explain-cyclic"
