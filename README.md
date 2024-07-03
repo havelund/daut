@@ -825,7 +825,7 @@ This would have the exact same effect, except that `end()` would not be automati
 Wrt. examples:
 
 - See [here](src/test/scala/daut41_mexec/Main.scala) for a complete example
-- See [here](https://github.com/havelund/daut/tree/master/src/test/scala/daut45_network) for an example of three monitors calling each other in a circular manner
+- See [here](https://github.com/havelund/daut/tree/master/src/test/scala/daut46_network) for an example of three monitors calling each other in a circular manner
 
 Wrt. the last example, monitors calling each other in a recursive manner can be problematic. A better way might be to embed monitors in actors:
 
