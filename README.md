@@ -822,6 +822,15 @@ This would have the exact same effect, except that `end()` would not be automati
 
 **Note:** multiple monitors can send to the same abstract monitor.
 
+Wrt. examples:
+
+- See [here](src/test/scala/daut41_mexec/Main.scala) for a complete example
+- See [here](https://github.com/havelund/daut/tree/master/src/test/scala/daut45_network) for an example of three monitors calling each other in a circular manner
+
+Wrt. the last example, monitors calling each other in a recursive manner can be problematic. A better way might be to embed monitors in actors:
+
+- See [here](https://github.com/havelund/daut/tree/master/src/test/scala/daut45_network_akka)
+
 ## Using Indexing to Speed up Monitors
 
 Indexing is an approach to speed up monitoring by defining a function from events to keys, and using the keys as entries in a hashmap to obtain only those states that are relevent to the particular event. This can be useful if our state soup ends up containing many (thousands) of states. The larger the number of states in the state soup, the more important indexing becomes for obtaining an efficient monitor. The improvement in speed can be several orders of magnitudes.

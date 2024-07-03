@@ -22,6 +22,13 @@ libraryDependencies ++= Seq(
 
 // ---
 
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor-typed" % "2.6.19",
+  "ch.qos.logback" % "logback-classic" % "1.2.10"
+)
+
+
+
 scalacOptions += "-explain"
 scalacOptions += "-explain-cyclic"
 

@@ -1,5 +1,11 @@
 package daut45_network
 
+/**
+  * This example illustrates how monitors can be set up to call each other
+  * in a circular manner. For this to work we have to play some tricks
+  * with call by name parameters (e.g. `m2: => M2`) and `lazy val` definition.
+  */
+
 import daut.{DautOptions, Monitor}
 
 // Events:
