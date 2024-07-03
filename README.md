@@ -829,7 +829,7 @@ Wrt. examples:
 
 Wrt. the last example, monitors calling each other in a recursive manner can be problematic. A better way might be to embed monitors in actors:
 
-- See [here](https://github.com/havelund/daut/tree/master/src/test/scala/daut45_network_akka)
+- See [here](https://github.com/havelund/daut/tree/master/src/test/scala/daut46_network_akka)
 
 ## Using Indexing to Speed up Monitors
 
