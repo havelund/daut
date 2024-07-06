@@ -1,5 +1,11 @@
 package daut48_log_json
 
+/*
+Illustrates how events that trigger monitor transitions can be recorded to permanent
+memory as JSON objects in a jsonl file. The example is based on a concrete monitor
+that sends events to an abstract monitor.
+ */
+
 import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.write
