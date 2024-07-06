@@ -52,10 +52,14 @@ object Main {
 
     def encoder(obj: Any): Option[String] = {
       val map = obj match {
-        //case Command(taskId, cmdNum) => Map("kind" -> "Command", "name" -> taskId, "cmdNum" -> cmdNum)
-        case DispatchRequest(taskId, cmdNum) => Map("kind" -> "DispatchRequest", "name" -> taskId, "cmdNum" -> cmdNum)
-        case DispatchReply(taskId, cmdNum) => Map("kind" -> "DispatchReply", "name" -> taskId, "cmdNum" -> cmdNum)
-        case CommandComplete(taskId, cmdNum) => Map("kind" -> "CommandComplete", "name" -> taskId, "cmdNum" -> cmdNum)
+        case Command(taskId, cmdNum) =>
+          Map("kind" -> "Command", "name" -> taskId, "cmdNum" -> cmdNum)
+        case DispatchRequest(taskId, cmdNum) =>
+          Map("kind" -> "DispatchRequest", "name" -> taskId, "cmdNum" -> cmdNum)
+        case DispatchReply(taskId, cmdNum) =>
+          Map("kind" -> "DispatchReply", "name" -> taskId, "cmdNum" -> cmdNum)
+        case CommandComplete(taskId, cmdNum) =>
+          Map("kind" -> "CommandComplete", "name" -> taskId, "cmdNum" -> cmdNum)
         case _ => return None
       }
       Some(write(map))
