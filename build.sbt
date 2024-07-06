@@ -12,13 +12,9 @@ libraryDependencies += "de.siegmar" %"fastcsv" %"1.0.1"
 libraryDependencies += "org.json4s" %% "json4s-native" % "4.0.6"
 libraryDependencies += "org.json4s" %% "json4s-ext" % "4.0.6"
 
-// for generating JSON from case classes:
+// for generating JSON:
 
-libraryDependencies ++= Seq(
-  "io.circe" %% "circe-core" % "0.14.1",
-  "io.circe" %% "circe-generic" % "0.14.1",
-  "io.circe" %% "circe-parser" % "0.14.1"
-)
+libraryDependencies += "com.lihaoyi" %% "upickle" % "3.3.1"
 
 // ---
 

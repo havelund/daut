@@ -1,4 +1,4 @@
-package daut42_json
+package daut42_read_json
 
 import java.io.File
 import sys.process._

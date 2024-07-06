@@ -1571,17 +1571,6 @@ Ending Daut trace evaluation for CorrectLock
 The `Monitor` class provides a collection of methods which can help viewing the results of a run. 
 These are explained in the following
 
-#### Showing Transitions
-
-The following method when called on a monitorobject with `flag` being true (default parameter value) will cause events to be printed when triggering transitions in the monitor, and all its submonitors. 
-
-```scala
-def showTransitions(flag: Boolean = true): Monitor[E]
-```
-
-Note, however, that the submonitors must have been added already for a call of this
-method to have effect on the submonitors.
-
 #### Recording Messages
 
 The following method allows to add arbitrary text messages as recordings in a monitor:
@@ -1604,11 +1593,113 @@ The following method prints the internal memory of a monitor:
 def printStates(): Unit
 ```
 
-## Using Piper Mode for JSONL files.
+## Showing and Logging Transitions in JSONL Format
+
+There are a number of options for showing and recording which events cause transitions to trigger in monitors.
+
+#### Printing Selected Triggering Events in Standard Out
+
+The following method when called on a monitor object with `flag` being true (default parameter value) will cause events to be printed when triggering transitions in the monitor, and all its submonitors. 
+
+```scala
+def showTransitions(flag: Boolean = true): Monitor[E]
+```
+
+Note, however, that the submonitors must have been added already for a call of this
+method to have effect on the submonitors.
+
+#### Printing All Triggering Events in Standard Out
+
+An alternative is to set the following variable to true, which will cause all events that trigger a transition, in any monitor, to be printed (`Monitor` is an object).
+
+```scala
+Monitor.SHOW_TRANSITIONS: Boolean = true
+```
+
+#### Writing Events as JSON Objects to Permanent Memory
+
+Finally, it is possible to cause selected events that trigger transitions to be written in JSON format to a file.
+
+Assume we have defined the following events and monitor.
+
+```scala
+sealed trait ConcreteEvent
+case class DispatchRequest(taskId: Int, cmdNum: Int) extends ConcreteEvent
+case class DispatchReply(taskId: Int, cmdNum: Int) extends ConcreteEvent
+case class CommandComplete(taskId: Int, cmdNum: Int) extends ConcreteEvent
+
+class ConcreteMonitor extends Monitor[ConcreteEvent] {
+  always {
+    case DispatchRequest(taskId, cmdNum) =>
+      hot {
+        case DispatchRequest(`taskId`, `cmdNum`) => error
+        case DispatchReply(`taskId`, `cmdNum`) =>
+          hot {
+            case CommandComplete(`taskId`, `cmdNum`) => ok
+          }
+      }
+  }
+}
+```
+
+First we have to define an encoder function, which maps events to string representations of JSON objects. One way is to use the json4s library. This function will below be provided as argument to a Daut function. Note that if this function returns `None` for an event, this event will not be written to permanent memory as a JSON object.
+
+```scala
+import org.json4s._
+import org.json4s.native.Serialization
+import org.json4s.native.Serialization.write
+
+
+implicit val formats: Formats = Serialization.formats(NoTypeHints)
+
+def encoder(obj: Any): Option[String] = {
+  val map = obj match {
+    case DispatchRequest(taskId, cmdNum) => 
+      Map("kind" -> "DispatchRequest", "name" -> taskId, "cmdNum" -> cmdNum)
+    case DispatchReply(taskId, cmdNum) => 
+      Map("kind" -> "DispatchReply", "name" -> taskId, "cmdNum" -> cmdNum)
+    case CommandComplete(taskId, cmdNum) => 
+      Map("kind" -> "CommandComplete", "name" -> taskId, "cmdNum" -> cmdNum)
+    case _ => return None
+  }
+  Some(write(map))
+}
+```
+
+We can now ask Daut to log events in a file as follows:
+
+```scala
+Monitor.logTransitionsAsJson("output.jsonl", encoder)
+```
+
+After that if we apply the monitor to a trace as follows:
+
+```scala
+val trace: List[ConcreteEvent] = List(
+  DispatchRequest(1, 1),
+  DispatchReply(1, 1),
+  CommandComplete(1, 1)
+)
+
+val monitor = new ConcreteMonitor
+monitor(trace)
+```
+
+a file `output.jsonl` will be created containing the following lines:
+
+```
+{"kind":"DispatchRequest","name":1,"cmdNum":1}
+{"kind":"DispatchReply","name":1,"cmdNum":1}
+{"kind":"CommandComplete","name":1,"cmdNum":1}
+```
+
+See [daut48_log_json.Main](./src/test/scala/daut48_log_json /Main.scala) for an example.
+
+## Using Piper Mode for JSONL Files
 
 Daut can be applied to read JSON objects from an input file written to by a concurrentlty executing task (online monitoring).
 
-See [daut42_json.Main](./src/test/scala/daut42_json/Main.scala)
+See [daut42_json.Main](./src/test/scala/daut42_read_json/Main.scala)
 
 To generate a script to run this program:
 

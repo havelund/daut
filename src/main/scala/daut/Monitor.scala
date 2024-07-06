@@ -2,6 +2,7 @@ package daut
 
 import scala.collection.mutable.{Map => MutMap}
 import scala.language.{implicitConversions, reflectiveCalls}
+import java.io.{BufferedWriter, FileWriter, PrintWriter}
 
 /**
   * Daut options to be set by the user.
@@ -187,8 +188,11 @@ class Monitor[E] {
               transitionTriggered = true
           }
       }
-      if (transitionTriggered && SHOW_TRANSITIONS) {
-        println(s"@[${monitorName}] $event")
+      if (transitionTriggered) {
+        if (SHOW_TRANSITIONS || Monitor.SHOW_TRANSITIONS) {
+          println(s"@[${monitorName}] $event")
+        }
+        Monitor.logTransition(event)
       }
     }
 
@@ -346,7 +350,7 @@ class Monitor[E] {
   var STOP_ON_ERROR: Boolean = false
 
   /**
-    * Option, which when set to true will cause events to be printed that trigger transitions.
+    * Option, which when set to true will cause events to be printed that trigger transitions in this monitor.
     * Default value is false.
     */
 
@@ -354,7 +358,7 @@ class Monitor[E] {
 
   /**
     * When called with `flag` being true, events that trigger transitions in this monitor,
-    * and all sub monitors, will be automaticallu printed.
+    * and all sub monitors, will be automatically printed.
     * @param flag when true events will be printed. If this method is not called with `flag`
     *             being true, then no events will be printed automatically.
     * @return the current monitor, allowing for method chaining.
@@ -1565,6 +1569,73 @@ class Monitor[E] {
 }
 
 /**
+  * The Monitor object supporting the Monitor class, with what otherwise would
+  * be called static methods in Java for example.
+  */
+
+object Monitor {
+  private var jsonWriter: PrintWriter = _
+  private var jsonEncoder: Any => Option[String] = _
+
+  /**
+    * Option, which when set to true will cause events to be printed that trigger transitions in any monitor.
+    * Default value is false.
+    */
+
+  var SHOW_TRANSITIONS: Boolean = false
+
+  /**
+    * Opens a file for writing events that trigger transitions as JSON objects. It should be a `.jsonl` file.
+    * The caller must define the function for mapping events to JSON objects. If this function returns
+    * None for an event, the event is not recorded.
+    *
+    * @param fileName fileName name of file written to.
+    * @param encoder  function mapping events to JSON strings.
+    */
+
+  def logTransitionsAsJson(fileName: String, encoder: Any => Option[String]): Unit = {
+    jsonWriter = new PrintWriter(new BufferedWriter(new FileWriter(fileName, false)))
+    jsonEncoder = encoder
+  }
+
+  /**
+    * Returns true if `logTransitionsAsJson` has been called.
+    *
+    * @return true if `logTransitionsAsJson` has been called.
+    */
+
+  def isWriterInitialized: Boolean = jsonWriter != null
+
+  /**
+    * Writes an object as a Json object to the opened `.jsonl` file.
+    *
+    * @param obj the object to write as a JSON object.
+    */
+
+  def logTransition(obj: Any): Unit = {
+    if (isWriterInitialized) {
+      val json = jsonEncoder(obj)
+      json match {
+        case None =>
+        case Some(string) =>
+          jsonWriter.println(string)
+          jsonWriter.flush()
+      }
+    }
+  }
+
+  /**
+    * Closes the previously opened `.jsonl` file.
+    */
+
+  def closeJsonFile(): Unit = {
+    if (jsonWriter != null) {
+      jsonWriter.close()
+    }
+  }
+}
+
+/**
   * This monitor class provides methods for performing abstraction in addition
   * to performing verification. The result of a verification is a new trace.
   *
@@ -1572,10 +1643,6 @@ class Monitor[E] {
   */
 
 class Abstract[E] extends Monitor[E] {
-  /**
-    * Contains the abstraction being produced.
-    */
-
   private val abstraction = new scala.collection.mutable.ListBuffer[E]()
 
   /**

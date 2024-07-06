@@ -1,4 +1,4 @@
-package daut42_json
+package daut42_read_json
 
 import scala.collection.mutable.ListBuffer
 import org.json4s._
