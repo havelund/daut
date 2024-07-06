@@ -1691,7 +1691,7 @@ a file `output.jsonl` will be created containing the following lines:
 {"kind":"CommandComplete","name":1,"cmdNum":1}
 ```
 
-See [daut48_log_json.Main](./src/test/scala/daut48_log_json /Main.scala) for an example.
+See [daut48_log_json.Main](./src/test/scala/daut48_log_json/Main.scala) for an example.
 
 ## Using Piper Mode for JSONL Files
 
