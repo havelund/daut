@@ -1593,11 +1593,9 @@ The following method prints the internal memory of a monitor:
 def printStates(): Unit
 ```
 
-## Showing and Logging Transitions in JSONL Format
+#### Printing Selected Triggering Events in Standard Out
 
 There are a number of options for showing and recording which events cause transitions to trigger in monitors.
-
-#### Printing Selected Triggering Events in Standard Out
 
 The following method when called on a monitor object with `flag` being true (default parameter value) will cause events to be printed when triggering transitions in the monitor, and all its submonitors. 
 
