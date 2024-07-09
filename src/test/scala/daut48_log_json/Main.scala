@@ -46,7 +46,7 @@ class ConcreteMonitor extends Monitor[ConcreteEvent] {
           hot {
             case CommandComplete(`taskId`, `cmdNum`) =>
               abstractMonitor(Command(taskId, cmdNum))
-              println(s"submitted ${Command(taskId, cmdNum)} to abstract monitor")
+              println(s"${Command(taskId, cmdNum)}")
           }
       }
   }
