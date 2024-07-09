@@ -1606,6 +1606,8 @@ def showTransitions(flag: Boolean = true): Monitor[E]
 Note, however, that the submonitors must have been added already for a call of this
 method to have effect on the submonitors.
 
+![here](./images/event-colors.png)
+
 #### Printing All Triggering Events in Standard Out
 
 An alternative is to set the following variable to true, which will cause all events that trigger a transition, in any monitor, to be printed (`Monitor` is an object).

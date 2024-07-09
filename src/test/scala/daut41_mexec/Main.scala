@@ -63,6 +63,7 @@ class ConcreteMonitor extends Monitor[ConcreteEvent] {
 
 object Main {
   def main(args: Array[String]): Unit = {
+    Monitor.SHOW_TRANSITIONS = true
     val trace: List[ConcreteEvent] = List(
       DispatchRequest(1, 1),
       DispatchReply(1, 1),

@@ -86,7 +86,7 @@ class Monitor[E] {
     * Is printed out when an error is detected.
     *
     * @param eventNr number of event.
-    * @param event the event.
+    * @param event   the event.
     */
 
   case class InitialEvent(eventNr: Long, event: E)
@@ -190,7 +190,7 @@ class Monitor[E] {
       }
       if (transitionTriggered) {
         if (SHOW_TRANSITIONS || Monitor.SHOW_TRANSITIONS) {
-          println(s"@[${monitorName}] $event")
+          println(s"@[${monitorName}] ${Monitor.eventColoring.colorEvent(event)}")
         }
         Monitor.logTransition(event)
       }
@@ -359,6 +359,7 @@ class Monitor[E] {
   /**
     * When called with `flag` being true, events that trigger transitions in this monitor,
     * and all sub monitors, will be automatically printed.
+    *
     * @param flag when true events will be printed. If this method is not called with `flag`
     *             being true, then no events will be printed automatically.
     * @return the current monitor, allowing for method chaining.
@@ -636,18 +637,18 @@ class Monitor[E] {
     }
 
     /**
-     * An expression of the form `unless {ts1} watch {ts2`} watches `ts2` repeatedly
-     * unless `ts1` fires. That is, the expression updates the transition function as
-     * the combination of the two transition functions provided. The resulting transition function
-     * first tries `ts1`, and if it can fire that is chosen. Otherwise `t2` is tried,
-     * and if it can fire it is made to fire, and the unless-state is re-added to the resulting state set.
-     * The transition function `ts1` does not need to ever fire, which makes the state final.
-     * If the state has already been initialized with a transition function it calls the
-     * corresponding function in the monitor, which returns a new state.
-     *
-     * @param ts1 the transition function.
-     * @return the state itself, allowing for further chained method calls.
-     */
+      * An expression of the form `unless {ts1} watch {ts2`} watches `ts2` repeatedly
+      * unless `ts1` fires. That is, the expression updates the transition function as
+      * the combination of the two transition functions provided. The resulting transition function
+      * first tries `ts1`, and if it can fire that is chosen. Otherwise `t2` is tried,
+      * and if it can fire it is made to fire, and the unless-state is re-added to the resulting state set.
+      * The transition function `ts1` does not need to ever fire, which makes the state final.
+      * If the state has already been initialized with a transition function it calls the
+      * corresponding function in the monitor, which returns a new state.
+      *
+      * @param ts1 the transition function.
+      * @return the state itself, allowing for further chained method calls.
+      */
 
     infix def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
@@ -1001,7 +1002,7 @@ class Monitor[E] {
     * @return an anonymous unless-state.
     */
 
-  protected infix def unless(ts1: Transitions): Object { def watch(ts2: Transitions): state } = new {
+  protected infix def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
     infix def watch(ts2: Transitions): anonymous = new anonymous {
       this.unless(ts1).watch(ts2)
     }
@@ -1020,7 +1021,7 @@ class Monitor[E] {
     * @return an anonymous until-state.
     */
 
-  protected infix def until(ts1: Transitions): Object { def watch(ts2: Transitions): state } = new {
+  protected infix def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
     infix def watch(ts2: Transitions): anonymous = new anonymous {
       this.until(ts1).watch(ts2)
     }
@@ -1044,81 +1045,81 @@ class Monitor[E] {
   }
 
   /**
-   * The `map` method returns a set of states computed as follows.
-   * If the provided argument partial function `pf` is defined for any active states,
-   * the resulting set is the union of all the state sets obtained by
-   * applying the function to the active states for which it is defined.
-   * Otherwise the returned set is the set `otherwise` provided as
-   * argument to the `orelse` method.
-   *
-   * As an example, consider the following monitor, which checks that
-   * at most one task can acquire a lock at a time, and that
-   * a task cannot release a lock it has not acquired.
-   * This monitor illustrates the `map` function, which looks for stored
-   * facts matching a pattern, and the ensure function, which checks a
-   * condition (an assert). This function here in this example tests for
-   * the presence of a Locked fact which is created when a lock is taken.
-   *
-   * {{{
-   * trait LockEvent
-   * case class acquire(thread: Int, lock: Int) extends LockEvent
-   * case class release(thread: Int, lock: Int) extends LockEvent
-   *
-   * class OneAtATime extends Monitor[LockEvent] {
-   *   case class Locked(thread: Int, lock: Int) extends state {
-   *     watch {
-   *       case release(thread, lock) => ok
-   *     }
-   *   }
-   *
-   *   always {
-   *     case acquire(t, l) => {
-   *       map {
-   *         case Locked(_,`l`) => error("allocated more than once")
-   *       } orelse {
-   *         Locked(t,l)
-   *       }
-   *     }
-   *     case release(t, l) => ensure(Locked(t,l))
-   *   }
-   * }
-   * }}}
-   *
-   * A more sophisticated example involving nested `map` calls is
-   * the following that checks that when a task `t` is acquiring a
-   * lock that some other task holds, and `t` therefore cannot get it,
-   * then `t` is not allowed to hold any other locks (to prevent deadlocks).
-   *
-   * {{{
-   * class AvoidDeadlocks extends Monitor[LockEvent] {
-   *   case class Locked(thread: Int, lock: Int) extends state {
-   *     watch {
-   *       case release(`thread`, `lock`) => ok
-   *     }
-   *   }
-   *
-   *   always {
-   *     case acquire(t, l) => {
-   *       map {
-   *         case Locked(_,`l`) =>
-   *           map {
-   *             case Locked(`t`,x) if l != x => error
-   *           } orelse {
-   *             println("Can't lock but is not holding any other lock, so it's ok")
-   *           }
-   *       } orelse {
-   *         Locked(t,l)
-   *       }
-   *     }
-   *   }
-   * }
-   * }}}
-   *
-   * @param pf partial function.
-   * @return set of states produced from applying the partial function `fp` to active states.
-   */
+    * The `map` method returns a set of states computed as follows.
+    * If the provided argument partial function `pf` is defined for any active states,
+    * the resulting set is the union of all the state sets obtained by
+    * applying the function to the active states for which it is defined.
+    * Otherwise the returned set is the set `otherwise` provided as
+    * argument to the `orelse` method.
+    *
+    * As an example, consider the following monitor, which checks that
+    * at most one task can acquire a lock at a time, and that
+    * a task cannot release a lock it has not acquired.
+    * This monitor illustrates the `map` function, which looks for stored
+    * facts matching a pattern, and the ensure function, which checks a
+    * condition (an assert). This function here in this example tests for
+    * the presence of a Locked fact which is created when a lock is taken.
+    *
+    * {{{
+    * trait LockEvent
+    * case class acquire(thread: Int, lock: Int) extends LockEvent
+    * case class release(thread: Int, lock: Int) extends LockEvent
+    *
+    * class OneAtATime extends Monitor[LockEvent] {
+    *   case class Locked(thread: Int, lock: Int) extends state {
+    *     watch {
+    *       case release(thread, lock) => ok
+    *     }
+    *   }
+    *
+    *   always {
+    *     case acquire(t, l) => {
+    *       map {
+    *         case Locked(_,`l`) => error("allocated more than once")
+    *       } orelse {
+    *         Locked(t,l)
+    *       }
+    *     }
+    *     case release(t, l) => ensure(Locked(t,l))
+    *   }
+    * }
+    * }}}
+    *
+    * A more sophisticated example involving nested `map` calls is
+    * the following that checks that when a task `t` is acquiring a
+    * lock that some other task holds, and `t` therefore cannot get it,
+    * then `t` is not allowed to hold any other locks (to prevent deadlocks).
+    *
+    * {{{
+    * class AvoidDeadlocks extends Monitor[LockEvent] {
+    *   case class Locked(thread: Int, lock: Int) extends state {
+    *     watch {
+    *       case release(`thread`, `lock`) => ok
+    *     }
+    *   }
+    *
+    *   always {
+    *     case acquire(t, l) => {
+    *       map {
+    *         case Locked(_,`l`) =>
+    *           map {
+    *             case Locked(`t`,x) if l != x => error
+    *           } orelse {
+    *             println("Can't lock but is not holding any other lock, so it's ok")
+    *           }
+    *       } orelse {
+    *         Locked(t,l)
+    *       }
+    *     }
+    *   }
+    * }
+    * }}}
+    *
+    * @param pf partial function.
+    * @return set of states produced from applying the partial function `fp` to active states.
+    */
 
-  protected def map(pf: PartialFunction[state, Set[state]]): Object { def orelse(otherwise: => Set[state]): Set[state]} = new {
+  protected def map(pf: PartialFunction[state, Set[state]]): Object {def orelse(otherwise: => Set[state]): Set[state]} = new {
     def orelse(otherwise: => Set[state]): Set[state] = {
       val matchingStates = states.getAllStates filter pf.isDefinedAt
       if (matchingStates.nonEmpty) {
@@ -1269,41 +1270,41 @@ class Monitor[E] {
     states.toSet
 
   /**
-   * Implicit function lifting a state to an anonymous object defining the `&`-operator,
-   * which defines conjunction of states. Hence one can write `state1 & state2`, which then
-   * results in the set `Set(state1,state2)`.
-   *
-   * @param s1 the state to be lifted.
-   * @return the anonymous object defining the method `&(s2: state): Set[state]`.
-   */
+    * Implicit function lifting a state to an anonymous object defining the `&`-operator,
+    * which defines conjunction of states. Hence one can write `state1 & state2`, which then
+    * results in the set `Set(state1,state2)`.
+    *
+    * @param s1 the state to be lifted.
+    * @return the anonymous object defining the method `&(s2: state): Set[state]`.
+    */
 
   protected implicit def convState2AndState(s1: state): Object {def &(s2: state): Set[state]} = new {
     def &(s2: state): Set[state] = Set(s1, s2)
   }
 
   /**
-   * Implicit function lifting a set of states to an anonymous object defining the `&`-operator,
-   * which defines conjunction of states. Hence one can write `state1 & state2 & state3`, which then
-   * results in the set `Set(state1,state2,state3)`. This works by first lifting
-   * `state1 & state2` to the set `Set(state1,state2)`, and then apply `& state3` to
-   * obtain `Set(state1,state2,state3)`.
-   *
-   * @param set the set of states to be lifted.
-   * @return the anonymous object defining the method `&(s2: state): Set[state]`.
-   */
+    * Implicit function lifting a set of states to an anonymous object defining the `&`-operator,
+    * which defines conjunction of states. Hence one can write `state1 & state2 & state3`, which then
+    * results in the set `Set(state1,state2,state3)`. This works by first lifting
+    * `state1 & state2` to the set `Set(state1,state2)`, and then apply `& state3` to
+    * obtain `Set(state1,state2,state3)`.
+    *
+    * @param set the set of states to be lifted.
+    * @return the anonymous object defining the method `&(s2: state): Set[state]`.
+    */
 
   protected implicit def conStateSet2AndStateSet(set: Set[state]): Object {def &(s: state): Set[state]} = new {
     def &(s: state): Set[state] = set + s
   }
 
   /**
-   * Implicit function lifting a Boolean to an anonymous object defining the implication
-   * operator. This allows to write `b1 ==> b2` for two Boolean expressions
-   * `b1` and `b2`. It has the same meaning as `!b1 || b2`.
-   *
-   * @param p the Boolean to be lifted.
-   * @return the anonymous object defining the method `==>(q: Boolean)`.
-   */
+    * Implicit function lifting a Boolean to an anonymous object defining the implication
+    * operator. This allows to write `b1 ==> b2` for two Boolean expressions
+    * `b1` and `b2`. It has the same meaning as `!b1 || b2`.
+    *
+    * @param p the Boolean to be lifted.
+    * @return the anonymous object defining the method `==>(q: Boolean)`.
+    */
 
   protected implicit def liftBoolean(p: Boolean): Object {def ==>(q: Boolean): Boolean} = new {
     def ==>(q: Boolean): Boolean = !p || q
@@ -1481,11 +1482,12 @@ class Monitor[E] {
 
   /**
     * Returns all recordings for this monitor and all of its sub monitors.
+    *
     * @return the recordings.
     */
 
   def getRecordings(): List[String] = {
-    var allRecordings : List[String] = recordings
+    var allRecordings: List[String] = recordings
     for (monitor <- monitors) {
       allRecordings = allRecordings ++ monitor.getRecordings()
     }
@@ -1495,7 +1497,7 @@ class Monitor[E] {
   /**
     * Prints error message, triggering event and current event and then calls `reportError()`.
     *
-    * @param event current event.
+    * @param event        current event.
     * @param initialEvent initially triggering event.
     */
 
@@ -1569,6 +1571,80 @@ class Monitor[E] {
 }
 
 /**
+  * Used for coloring events that are printed on standard out when they
+  * trigger transitions. The coloring is automated, assuming that events
+  * are objects of case classes. If they are not, the color is the default
+  * black. The color chosen for an event depends on the (simple) name of
+  * the corresponding case class. The coloring rotates amongst a predefined
+  * collection of colors, in a circular manner, so one color can potentially
+  * be used for events of different case classes.
+  */
+
+class EventColoring {
+  /**
+    * The colors
+    */
+  private val RESET = "\u001B[0m"
+  private val BLACK = "\u001B[30m"
+  private val RED = "\u001B[31m"
+  private val GREEN = "\u001B[32m"
+  private val YELLOW = "\u001B[33m"
+  private val BLUE = "\u001B[34m"
+  private val PURPLE = "\u001B[35m"
+  private val CYAN = "\u001B[36m"
+  private val WHITE = "\u001B[37m"
+
+  /**
+    * Mapping from case class names to colors.
+    */
+  private var eventColorMap: Map[String, String] = Map()
+
+  /**
+    * The list of available colors and its length.
+    */
+  private var colors: Array[String] = Array(RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE)
+  private var numberOfColors = colors.length
+
+  /**
+    * The current next color is at this index.
+    */
+  private var colorIndex: Int = 0
+
+  /**
+    * Returns the next color pointed to by `colorIndex` and counts this index up modulo
+    * the length of the color list.
+    * @return the next color.
+    */
+  private def nextColor(): String = {
+    val color = colors(colorIndex)
+    colorIndex = (colorIndex + 1) % numberOfColors
+    color
+  }
+
+  /**
+    * Returns the colored version of an event.
+    * @param event the event to be colored
+    * @return the colored version of the event.
+    */
+  def colorEvent(event: Any): String = {
+    var eventColor: String = BLACK // default color
+    event match {
+      case _: Product if !event.getClass.getName.startsWith("scala.Tuple") =>
+        val name = event.getClass.getSimpleName
+        eventColorMap.get(name) match {
+          case Some(color) =>
+            eventColor = color
+          case None =>
+            eventColor = nextColor()
+            eventColorMap = eventColorMap + (name -> eventColor)
+        }
+      case _ => // use default color
+    }
+    s"$eventColor$event$RESET"
+  }
+}
+
+/**
   * The Monitor object supporting the Monitor class, with what otherwise would
   * be called static methods in Java for example.
   */
@@ -1576,6 +1652,7 @@ class Monitor[E] {
 object Monitor {
   private var jsonWriter: PrintWriter = _
   private var jsonEncoder: Any => Option[String] = _
+  private val eventColoring: EventColoring = EventColoring()
 
   /**
     * Option, which when set to true will cause events to be printed that trigger transitions in any monitor.
