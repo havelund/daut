@@ -1574,7 +1574,7 @@ class Monitor[E] {
   * Used for coloring events that are printed on standard out when they
   * trigger transitions. The coloring is automated, assuming that events
   * are objects of case classes. If they are not, the color is the default
-  * black. The color chosen for an event depends on the (simple) name of
+  * green. The color chosen for an event depends on the (simple) name of
   * the corresponding case class. The coloring rotates amongst a predefined
   * collection of colors, in a circular manner, so one color can potentially
   * be used for events of different case classes.
@@ -1602,7 +1602,7 @@ class EventColoring {
   /**
     * The list of available colors and its length.
     */
-  private var colors: Array[String] = Array(RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE)
+  private var colors: Array[String] = Array(RED, GREEN, YELLOW, BLUE, PURPLE, CYAN)
   private var numberOfColors = colors.length
 
   /**
@@ -1627,7 +1627,7 @@ class EventColoring {
     * @return the colored version of the event.
     */
   def colorEvent(event: Any): String = {
-    var eventColor: String = BLACK // default color
+    var eventColor: String = GREEN // default color
     event match {
       case _: Product if !event.getClass.getName.startsWith("scala.Tuple") =>
         val name = event.getClass.getSimpleName
