@@ -1593,7 +1593,7 @@ The following method prints the internal memory of a monitor:
 def printStates(): Unit
 ```
 
-#### Printing Selected Triggering Events in Standard Out
+#### Printing Selected Triggering Events on Standard Out
 
 There are a number of options for showing and recording which events cause transitions to trigger in monitors.
 
@@ -1612,7 +1612,7 @@ Events will be printed out in color if they are objects of a case class. The nam
   <img src="./images/event-colors.png" alt="Description" width="370">
 </div>
 
-#### Printing All Triggering Events in Standard Out
+#### Printing All Triggering Events on Standard Out
 
 An alternative is to set the following variable to true, which will cause all events that trigger a transition, in any monitor, to be printed (`Monitor` is an object).
 
