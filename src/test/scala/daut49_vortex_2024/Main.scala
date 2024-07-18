@@ -40,14 +40,12 @@ class CommandMonitor1 extends Monitor[Event] {
 
 // Complex Monitor:
 
-def average(list: List[Int]): Double = {
-  val sum = list.sum
-  val count = list.size
-  sum.toDouble / count
-}
+
 
 class CommandMonitor2(db: DB) extends Monitor[Event] {
   var execTimes: List[Int] = List()
+
+  def average(list: List[Int]): Double = list.sum.toDouble / list.size
 
   always {
     case Dispatch(taskId, cmdNum, time1) =>
