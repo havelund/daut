@@ -6,7 +6,7 @@ import daut.{Monitor}
 This example concerns the dispatch and completion of commands on a spacecraft.
 The following requirements must be monitored.
 
-- Each command dispatch and completion is identified by a task id, a command number, and time
+- Each command dispatch and completion is identified by a task id, a command number, and time.
 - Each command that is dispatched must eventually be completed within 20 seconds, with same task id and cmd nr.
 - Once a command is dispatched it cannot be dispatched again with same task id and cmd nr before it completes.
 - After a command completion the monitor must send a message to a database informing about it.
