@@ -80,8 +80,8 @@ object Main {
       Complete(20, 1, 3030)
     )
 
-    val sut = DB()
-    val monitor = new CommandMonitor1
+    val db = DB()
+    val monitor = new CommandMonitor2(db)
     monitor(trace)
   }
 }
