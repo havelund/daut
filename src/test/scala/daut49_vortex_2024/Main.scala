@@ -67,20 +67,12 @@ class CommandMonitor2(db: DB) extends Monitor[Event] {
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val trace: List[Event] = List(
-      Dispatch(10, 1, 1000),
-      Complete(10, 1, 1010),
-
-      Dispatch(10, 2, 2000),
-      Complete(10, 2, 2020),
-
-      Dispatch(20, 1, 3000),
-      Complete(20, 1, 3030)
-    )
-
     val db = DB()
-    val monitor = new CommandMonitor2(db)
-    monitor(trace)
+    val m = new CommandMonitor2(db)
+    m.verify(Dispatch(10, 1, 1000))
+    m.verify(Complete(10, 1, 1010))
+    m.verify(Dispatch(12, 1, 1000))
+    m.end()
   }
 }
 

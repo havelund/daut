@@ -17,6 +17,13 @@ object DautOptions {
   var DEBUG: Boolean = false
 
   /**
+    * When true traces will be printed as part of states in memory
+    * in debugging mode (when DEBUG == true).
+    */
+
+  var DEBUG_TRACES: Boolean = true
+
+  /**
     * When true will cause a big ERROR banner to be printed
     * on standard out upon detection of a specification violation, making it easier
     * to quickly see that an error occurred amongst other large output.
@@ -82,14 +89,17 @@ class Monitor[E] {
   thisMonitor =>
 
   /**
-    * Used to record the initial event that causes a monitor state to track a behavior.
+    * Used to record an event that causes a monitor state to trigger a transition.
+    * Each state contains a list of trace events that lead to that state.
     * Is printed out when an error is detected.
     *
     * @param eventNr number of event.
     * @param event   the event.
     */
 
-  case class InitialEvent(eventNr: Long, event: E)
+  case class TraceEvent(eventNr: Long, event: E) {
+    override def toString(): String = s"$eventNr : $event"
+  }
 
   /**
     * This class represents all the active states in a monitor (excluding those of its sub-monitors).
@@ -527,12 +537,11 @@ class Monitor[E] {
     private[daut] var isFinal: Boolean = true
 
     /**
-      * Each state is associated with an initial event that caused the sequence
-      * of states, of which this is part, to be generated. It is a form of simple
-      * error trace.
+      * Each state is associated with a trace of events, each of which caused
+      * a transition in some state to trigger, transitively leading to this state.
       */
 
-    var initialEvent: Option[InitialEvent] = None
+    var trace: List[TraceEvent] = List()
 
     /**
       * Updates the transition function to exactly the transition function provided.
@@ -703,17 +712,16 @@ class Monitor[E] {
 
     def apply(event: E): Option[Set[state]] =
       if (transitions.isDefinedAt(event)) {
-        val theInitialEvent: Option[InitialEvent] = initialEvent match {
-          case None => Some(InitialEvent(eventNumber, event))
-          case _ => initialEvent
-        }
         val newStates = transitions(event)
+        val newTrace = TraceEvent(eventNumber, event) :: trace
         for (ns <- newStates) {
           ns match {
-            case `error` => reportErrorOnEvent(event, this.initialEvent)
+            case `error` => reportErrorOnEvent(event, newTrace)
             case `ok` | `stay` =>
             case ns =>
-              if (!ns.isInitial) ns.initialEvent = theInitialEvent
+              if (!ns.isInitial) {
+                ns.trace = newTrace
+              }
           }
         }
         Some(newStates)
@@ -1382,7 +1390,7 @@ class Monitor[E] {
         println()
         for (hotState <- hotStates) {
           print(hotState)
-          reportErrorAtEnd(hotState.initialEvent)
+          reportErrorAtEnd(hotState.trace)
           println()
         }
       }
@@ -1468,12 +1476,18 @@ class Monitor[E] {
     println("[memory] ")
     for (s <- states.getMainStates) {
       println(s"  $s")
+      if (DautOptions.DEBUG_TRACES) {
+        printTrace(s.trace, 4)
+      }
     }
     println
     for (index <- states.getIndexes) {
       println(s"[index=$index]")
       for (s <- states.getIndexedSet(index)) {
         println(s"  $s")
+        if (DautOptions.DEBUG_TRACES) {
+          printTrace(s.trace, 4)
+        }
       }
     }
     println()
@@ -1495,36 +1509,46 @@ class Monitor[E] {
   }
 
   /**
-    * Prints error message, triggering event and current event and then calls `reportError()`.
-    *
-    * @param event        current event.
-    * @param initialEvent initially triggering event.
+    * Prints a trace associated with a state.
+    * @param trace the trace to print.
+    * @param indent number of spaces to indent (depends on context)
     */
 
-  protected def reportErrorOnEvent(event: E, initialEvent: Option[InitialEvent]): Unit = {
-    println("\n*** ERROR")
-    initialEvent match {
-      case None =>
-      case Some(trigger) =>
-        println(s"trigger event: ${trigger.event} event number ${trigger.eventNr}")
+  def printTrace(trace: List[TraceEvent], indent: Int = 0): Unit = {
+    val indentation = " " * indent
+    println(indentation + "Trace:")
+    for (event <- trace.reverse) {
+      println(indentation + s"  $event")
     }
+  }
+
+  /**
+    * Prints error message, triggering event, and trace,
+    * and then calls `reportError()`.
+    *
+    * @param event the triggering event causing the error.
+    * @param trace the trace leading to the error. Includes only events that
+    *              triggered transitions leading to this state.
+    */
+
+  protected def reportErrorOnEvent(event: E, trace: List[TraceEvent]): Unit = {
+    println("\n*** ERROR")
     println(s"current event: $event event number $eventNumber")
+    printTrace(trace)
     reportError()
   }
 
   /**
-    * Prints end of trace error message, triggering event and then calls `reportError()`.
+    * Prints end of trace error message, prints the trace leading to the error,
+    * and then calls `reportError()`.
     *
-    * @param initialEvent initially triggering event.
+    * @param trace the trace leading to the error. Includes only events that
+    *              triggered transitions leading to this state.
     */
 
-  protected def reportErrorAtEnd(initialEvent: Option[InitialEvent]): Unit = {
+  protected def reportErrorAtEnd(trace: List[TraceEvent]): Unit = {
     println("\n*** ERROR AT END OF TRACE")
-    initialEvent match {
-      case None =>
-      case Some(trigger) =>
-        println(s"trigger event: ${trigger.event} event number ${trigger.eventNr}")
-    }
+    printTrace(trace)
     reportError()
   }
 
