@@ -200,7 +200,11 @@ class Monitor[E] {
       }
       if (transitionTriggered) {
         if (SHOW_TRANSITIONS || Monitor.SHOW_TRANSITIONS) {
-          println(s"@[${monitorName}] ${Monitor.eventColoring.colorEvent(event)}")
+          val shownEvent = renderEventAs(event) match {
+            case None => event.toString
+            case Some(s) => s
+          }
+          println(s"@[${monitorName}] ${Monitor.eventColoring.colorEvent(shownEvent)}")
         }
         Monitor.logTransition(event)
       }
@@ -250,6 +254,21 @@ class Monitor[E] {
     */
 
   private var monitorAtTop: Boolean = true
+
+  /**
+    * Method for turning an event into a user defined format for being printed
+    * when transition triggering events are printed (`SHOW_TRANSITIONS` is true).
+    * To be overridden by the user if the default `toString` format is not desired.
+    * It can for example be used to filter out unimportant arguments, or highlighting
+    * instance identifier.
+    *
+    * @param event the event to be converted.
+    * @return `None` if that event should be rendered as the default `event.toString()`.
+    *         `Some(s)` if it should be rendered as `s`.
+    */
+
+  protected def renderEventAs(event: E): Option[String] =
+    None
 
   /**
     * Computes the key for an event. Keys are used for optimizing monitoring.

@@ -1614,6 +1614,15 @@ Events will be printed out in color if they are objects of a case class. The nam
   <img src="./images/event-colors.png" alt="Description" width="370">
 </div>
 
+It is possible to control how events are reported by overriding the following method:
+
+```scala
+protected def renderEventAs(event: E): Option[String] = None
+```
+
+By default, when applied to an event `e`, it returns `None`, which means that the event will be printed
+as the default `e.toString()`. The user can override the method to instead return `Some(s)` for various events, resulting in the event as being rendered as `s` instead. This can e.g. be used to highlight certain arguments to the event, or/and filter out arguments.
+
 #### Printing All Triggering Events on Standard Out
 
 An alternative is to set the following variable to true, which will cause all events that trigger a transition, in any monitor, to be printed (`Monitor` is an object).
