@@ -204,7 +204,9 @@ class Monitor[E] {
             case None => event.toString
             case Some(s) => s
           }
-          println(s"@[${monitorName}] ${Monitor.eventColoring.colorEvent(shownEvent)}")
+          val string = s"@[$monitorName] $shownEvent"
+          val coloredString = Monitor.eventColoring.colorString(monitorName, string)
+          println(coloredString)
         }
         Monitor.logTransition(event)
       }
@@ -419,11 +421,11 @@ class Monitor[E] {
 
   /**
     * Register a monitor as being communicated to from the current monitor. Usually such a monitor
-    * functions as an abstraction (an abstract monitor), which can verify higher level events produced by the 
-    * current monitor, as well as by other monitors. That is, an abstract monitor can be registered as 
+    * functions as an abstraction (an abstract monitor), which can verify higher level events produced by the
+    * current monitor, as well as by other monitors. That is, an abstract monitor can be registered as
     * such on several monitors. It is the responsibility of the current monitor to send events to it.
     * Whenever `end()` is called on the current monitor it is also called on its abstract monitors, as it is
-    * called on submonitors (while avoiding duplicate calls of `end()`). The reason for calling this 
+    * called on submonitors (while avoiding duplicate calls of `end()`). The reason for calling this
     * method in fact is to ensure that `end()` is called automatically on the abstract monitor.
     *
     * @param monitor the abstract monitor
@@ -1529,7 +1531,8 @@ class Monitor[E] {
 
   /**
     * Prints a trace associated with a state.
-    * @param trace the trace to print.
+    *
+    * @param trace  the trace to print.
     * @param indent number of spaces to indent (depends on context)
     */
 
@@ -1623,7 +1626,7 @@ class Monitor[E] {
   * be used for events of different case classes.
   */
 
-class EventColoring {
+class Coloring {
   /**
     * The colors
     */
@@ -1638,9 +1641,9 @@ class EventColoring {
   private val WHITE = "\u001B[37m"
 
   /**
-    * Mapping from case class names to colors.
+    * Mapping from strings to colors.
     */
-  private var eventColorMap: Map[String, String] = Map()
+  private var colorMap: Map[String, String] = Map()
 
   /**
     * The list of available colors and its length.
@@ -1656,6 +1659,7 @@ class EventColoring {
   /**
     * Returns the next color pointed to by `colorIndex` and counts this index up modulo
     * the length of the color list.
+    *
     * @return the next color.
     */
   private def nextColor(): String = {
@@ -1665,25 +1669,36 @@ class EventColoring {
   }
 
   /**
-    * Returns the colored version of an event.
-    * @param event the event to be colored
-    * @return the colored version of the event.
+    * Returns the color for a string. The same color will be returned
+    * for the same string. A string is typically a name, such as e.g.
+    * a monitor name.
+    *
+    * @param string the string to be associated with a color.
+    * @return the color for the string.
     */
-  def colorEvent(event: Any): String = {
-    var eventColor: String = GREEN // default color
-    event match {
-      case _: Product if !event.getClass.getName.startsWith("scala.Tuple") =>
-        val name = event.getClass.getSimpleName
-        eventColorMap.get(name) match {
-          case Some(color) =>
-            eventColor = color
-          case None =>
-            eventColor = nextColor()
-            eventColorMap = eventColorMap + (name -> eventColor)
-        }
-      case _ => // use default color
+
+  def colorForString(string: String): String = {
+    colorMap.get(string) match {
+      case Some(color) =>
+        color
+      case None =>
+        val color = nextColor()
+        colorMap = colorMap + (string -> color)
+        color
     }
-    s"$eventColor$event$RESET"
+  }
+
+  /**
+    * Colors a string according to to the color of a name.
+    *
+    * @param name the name controlling what color the string is colored with.
+    * @param string the string to be colored.
+    * @return the colored string.
+    */
+
+  def colorString(name: String, string: String): String = {
+    val color = colorForString(name)
+    s"$color$string$RESET"
   }
 }
 
@@ -1695,7 +1710,7 @@ class EventColoring {
 object Monitor {
   private var jsonWriter: PrintWriter = _
   private var jsonEncoder: Any => Option[String] = _
-  private val eventColoring: EventColoring = EventColoring()
+  private val eventColoring: Coloring = Coloring()
 
   /**
     * Option, which when set to true will cause events to be printed that trigger transitions in any monitor.

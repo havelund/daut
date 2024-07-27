@@ -1608,10 +1608,10 @@ def showTransitions(flag: Boolean = true): Monitor[E]
 Note, however, that the submonitors must have been added already for a call of this
 method to have effect on the submonitors.
 
-Events will be printed out in color if they are objects of a case class. The name of each event case class is automatically assigned a color. The output will look something like the following, with the monitor name in square brackets.
+Events will be printed out in color with different colors chosen for different monitors (in a circular manner since the number of colors is limited). The output will look something like the following, here for two monitors `M1` and `M2`, with the monitor name in square brackets and the event following.
 
 <div style="text-align: center;">
-  <img src="./images/event-colors.png" alt="Description" width="370">
+  <img src="./images/event-colors.png" alt="Description" width="100">
 </div>
 
 It is possible to control how events are reported by overriding the following method:
