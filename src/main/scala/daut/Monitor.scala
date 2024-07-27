@@ -575,7 +575,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def watch(ts: Transitions): state = {
+    // Was changed to infix. Was changed back.
+    def watch(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.watch(ts)
       transitionsInitialized = true
       name = "watch"
@@ -596,7 +597,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def always(ts: Transitions): state = {
+    // Was changed to infix. Was changed back.
+    def always(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.always(ts)
       transitionsInitialized = true
       name = "always"
@@ -616,7 +618,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def hot(ts: Transitions): state = {
+    // Was changed to infix. Was changed back.
+    def hot(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.hot(ts)
       transitionsInitialized = true
       name = "hot"
@@ -637,7 +640,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def wnext(ts: Transitions): state = {
+    // Was changed to infix. Was changed back.
+    def wnext(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.wnext(ts)
       transitionsInitialized = true
       name = "wnext"
@@ -657,7 +661,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def next(ts: Transitions): state = {
+    // Was changed to infix. Was changed back.
+    def next(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.next(ts)
       transitionsInitialized = true
       name = "next"
@@ -680,7 +685,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
+    // Was changed to infix. Was changed back.
+    def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
         if (transitionsInitialized) return thisMonitor.unless(ts1).watch(ts2)
         transitionsInitialized = true
@@ -705,7 +711,8 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    infix def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
+    // Was changed to infix. Was changed back.
+    def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
         if (transitionsInitialized) return thisMonitor.until(ts1).watch(ts2)
         transitionsInitialized = true
@@ -799,7 +806,8 @@ class Monitor[E] {
       * @return the state itself, but updated with the label.
       */
 
-    infix def label(values: Any*): state = {
+    // Was changed to infix. Was changed back.
+    def label(values: Any*): state = {
       name += values.map(_.toString).mkString("(", ",", ")")
       this
     }
@@ -958,9 +966,23 @@ class Monitor[E] {
     * @return an anonymous watch-state.
     */
 
-  protected infix def watch(ts: Transitions): anonymous = new anonymous {
+  // Was changed to infix. Was changed back.
+  protected def watch(ts: Transitions): anonymous = new anonymous {
     this.watch(ts)
   }
+
+  /**
+    * Labelled version of the `watch` method. This can be used instead to calling the `label` method
+    * at the end of an anonymous `watch` state.
+    *
+    * @param values the label values.
+    * @param ts     the transition function.
+    * @return an anonymous watch-state with a label.
+    */
+
+  protected def watch(values: Any*)(ts: Transitions): anonymous = new anonymous {
+    this.watch(ts)
+  }.label(values: _*).asInstanceOf[anonymous]
 
   /**
     * Returns an always-state, where the transition function is the transition function provided,
@@ -973,9 +995,23 @@ class Monitor[E] {
     * @return an anonymous always-state.
     */
 
-  protected infix def always(ts: Transitions): anonymous = new anonymous {
+  // Was changed to infix. Was changed back.
+  protected def always(ts: Transitions): anonymous = new anonymous {
     this.always(ts)
   }
+
+  /**
+    * Labelled version of the `always` method. This can be used instead to calling the `label` method
+    * at the end of an anonymous `always` state.
+    *
+    * @param values the label values.
+    * @param ts     the transition function.
+    * @return an anonymous always-state with a label.
+    */
+
+  protected def always(values: Any*)(ts: Transitions): anonymous = new anonymous {
+    this.always(ts)
+  }.label(values: _*).asInstanceOf[anonymous]
 
   /**
     * Returns a hot-state, where the transition function is the transition function provided.
@@ -987,9 +1023,23 @@ class Monitor[E] {
     * @return an anonymous hot-state.
     */
 
-  protected infix def hot(ts: Transitions): anonymous = new anonymous {
+  // Was changed to infix. Was changed back.
+  protected def hot(ts: Transitions): anonymous = new anonymous {
     this.hot(ts)
   }
+
+  /**
+    * Labelled version of the `hot` method. This can be used instead to calling the `label` method
+    * at the end of an anonymous `hot` state.
+    *
+    * @param values the label values.
+    * @param ts the transition function.
+    * @return an anonymous hot-state with a label.
+    */
+
+  protected def hot(values: Any*)(ts: Transitions): anonymous = new anonymous {
+    this.hot(ts)
+  }.label(values: _*).asInstanceOf[anonymous]
 
   /**
     * Returns a wnext-state (weak next), where the transition function is the transition function provided,
@@ -1001,9 +1051,23 @@ class Monitor[E] {
     * @return an anonymous wnext-state.
     */
 
-  protected infix def wnext(ts: Transitions): anonymous = new anonymous {
+
+  protected def wnext(ts: Transitions): anonymous = new anonymous {
     this.wnext(ts)
   }
+
+  /**
+    * Labelled version of the `wnext` method. This can be used instead to calling the `label` method
+    * at the end of an anonymous `wnext` state.
+    *
+    * @param values the label values.
+    * @param ts     the transition function.
+    * @return an anonymous wnext-state with a label.
+    */
+
+  protected def wnext(values: Any*)(ts: Transitions): anonymous = new anonymous {
+    this.wnext(ts)
+  }.label(values: _*).asInstanceOf[anonymous]
 
   /**
     * Returns a next-state (strong next), where the transition function is the transition function provided,
@@ -1015,9 +1079,23 @@ class Monitor[E] {
     * @return an anonymous next-state.
     */
 
-  protected infix def next(ts: Transitions): anonymous = new anonymous {
+  // Was changed to infix. Was changed back.
+  protected def next(ts: Transitions): anonymous = new anonymous {
     this.next(ts)
   }
+
+  /**
+    * Labelled version of the `next` method. This can be used instead to calling the `label` method
+    * at the end of an anonymous `next` state.
+    *
+    * @param values the label values.
+    * @param ts     the transition function.
+    * @return an anonymous next-state with a label.
+    */
+
+  protected def next(values: Any*)(ts: Transitions): anonymous = new anonymous {
+    this.next(ts)
+  }.label(values: _*).asInstanceOf[anonymous]
 
   /**
     * An expression of the form `unless {ts1} watch {ts2`} watches `ts2` repeatedly
@@ -1031,8 +1109,10 @@ class Monitor[E] {
     * @return an anonymous unless-state.
     */
 
-  protected infix def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    infix def watch(ts2: Transitions): anonymous = new anonymous {
+
+  protected def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
+    // Was changed to infix. Was changed back.
+    def watch(ts2: Transitions): anonymous = new anonymous {
       this.unless(ts1).watch(ts2)
     }
   }
@@ -1050,8 +1130,10 @@ class Monitor[E] {
     * @return an anonymous until-state.
     */
 
-  protected infix def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    infix def watch(ts2: Transitions): anonymous = new anonymous {
+  // Was changed to infix. Was changed back.
+  protected def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
+    // Was changed to infix. Was changed back.
+    def watch(ts2: Transitions): anonymous = new anonymous {
       this.until(ts1).watch(ts2)
     }
   }
@@ -1691,7 +1773,7 @@ class Coloring {
   /**
     * Colors a string according to to the color of a name.
     *
-    * @param name the name controlling what color the string is colored with.
+    * @param name   the name controlling what color the string is colored with.
     * @param string the string to be colored.
     * @return the colored string.
     */

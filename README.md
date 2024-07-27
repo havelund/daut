@@ -1323,6 +1323,19 @@ When debugging a monitor with the `DautOptions.DEBUG` flag set to true, states w
 
 This will cause `hot(1,2)` to be printed instead of just `hot` (for values `t`=1 and `x`=2).
 
+It is also, as an alternative, possible to provide the label information to the anonymous state producing functions (`always`, `hot`, ...) as follows,
+with the exact same effect on the debugging information produced as the example above:
+
+```scala
+  always {
+    case acquire(t, x) =>
+      hot(t,x) {
+        case acquire(_, `x`) => error
+        case CANCEL | release(`t`, `x`) => ok
+      } 
+  }
+```
+
 #### Example of using debugging mode
 
 ##### The slow monitor not using indexing
