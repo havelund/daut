@@ -207,6 +207,7 @@ class Monitor[E] {
           }
       }
       if (transitionTriggered) {
+        Monitor.transitionsTriggered = true
         if (SHOW_TRANSITIONS || Monitor.SHOW_TRANSITIONS) {
           val shownEvent = renderEventAs(event) match {
             case None => event.toString
@@ -1543,6 +1544,9 @@ class Monitor[E] {
     */
 
   def verify(event: E, eventNr: Long = 0): this.type = {
+    if (monitorAtTop) {
+      Monitor.transitionsTriggered = false
+    }
     if (eventNr > 0) {
       eventNumber = eventNr
     } else {
@@ -1550,7 +1554,6 @@ class Monitor[E] {
     }
     if (initializing) initializing = false
     verifyBeforeEvent(event)
-    if (monitorAtTop) debug("\n===[" + event + "]===\n")
     if (relevant(event)) {
       states.applyEvent(event)
       invariants foreach { case (e, inv) => check(inv(()), e) }
@@ -1558,7 +1561,10 @@ class Monitor[E] {
     for (monitor <- monitors) {
       monitor.verify(event)
     }
-    if (monitorAtTop && DautOptions.DEBUG) printStates()
+    if (monitorAtTop && DautOptions.DEBUG && Monitor.transitionsTriggered) {
+      println("\n===[" + event + "]===\n")
+      printStates()
+    }
     verifyAfterEvent(event)
     this
   }
@@ -1898,6 +1904,15 @@ object Monitor {
   private var jsonWriter: PrintWriter = _
   private var jsonEncoder: Any => Option[String] = _
   private val eventColoring: Coloring = Coloring()
+
+  /**
+    * Set to true when an incoming event triggers a transition in
+    * a (sub) monitor. Is used to control whether to print out statys
+    * of (sub) monitors in DEBUG mode. It is set to false at the beginning
+    * of processing each new event.
+    */
+
+  var transitionsTriggered: Boolean = false
 
   /**
     * Option, which when set to true will cause events to be printed that trigger transitions in any monitor.
