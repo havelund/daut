@@ -1291,13 +1291,20 @@ object Main {
 
 Daut offers three option variables that can be set:
 
-- `DautOptions.DEBUG` (static variable): when set to true, causes each monitor step to be printed, including event and resulting set of states. Default is false.
-- `DautOptions.DEBUG_ALL_EVENTS` (static variable): when set to true and `DEBUG` is true, causes all events to be reported. If false, only events 
- triggering transitions are shown. Default is false.
-- `DautOptions.DEBUG_TRACES` (static variable): when set to true and `DEBUG` is true, causes the trace
-  that lead to a state be printed as part of the state. Default is true.
-- `DautOptions.PRINT_ERROR_BANNER` (static variable): when set to true, when an error occurs, a very big ERROR BANNNER is printed (to make it visible amongst plenty of output). Default is true.
+- `DautOptions.DEBUG` (static variable): when set to true, causes each 
+monitor step to be printed, including event and resulting set of states. Default is false.
+
+- `DautOptions.DEBUG_ALL_EVENTS` (static variable): when set to true and `DEBUG` is true, causes all events to be reported. If false, only events triggering transitions are shown. Default is false.
+
+- `DautOptions.DEBUG_TRACES` (static variable): when set to true and `DEBUG` is true, causes the trace that lead to a state be printed as part of the state. Default is true.
+
+- `DautOptions.PRINT_ERROR_BANNER` (static variable): when set to true, when an error occurs, a very big ERROR BANNNER is printed (to make it visible    amongst plenty of output). Default is false.
+
+- `DautOptions.RECORD_OK` (static variable): when set to true, every `ok` 
+(success) reached will be reported. Default is false.
+
 - `Monitor.STOP_ON_ERROR`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
+
 
 These options can be set as shown in the following example:
 

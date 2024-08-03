@@ -39,6 +39,13 @@ object DautOptions {
     */
 
   var PRINT_ERROR_BANNER = false
+
+  /**
+    * When true, reaching `ok` states will be recorded, indicating
+    * monitors that succeed.
+    */
+
+  var RECORD_OK: Boolean = false
 }
 
 /**
@@ -837,20 +844,18 @@ class Monitor[E] {
       * @return the optional set of states resulting from taking a transition.
       */
 
-    // Original version before initialEvent was introduced:
-    // ====================================================
-    // def apply(event: E): Option[Set[state]] =
-    //   if (transitions.isDefinedAt(event))
-    //     Some(transitions(event)) else None
-
     def apply(event: E): Option[Set[state]] =
       if (transitions.isDefinedAt(event)) {
         val newStates = transitions(event)
         val newTrace = TraceEvent(eventNumber, event) :: trace
         for (ns <- newStates) {
           ns match {
+            case `stay` =>
             case `error` => reportErrorOnEvent(this, event, newTrace)
-            case `ok` | `stay` =>
+            case `ok` =>
+              if (DautOptions.RECORD_OK) {
+                reportSuccessOnEvent(this, event, newTrace) // TODO
+              }
             case ns =>
               if (!ns.isInitial) {
                 ns.trace = newTrace
@@ -1764,7 +1769,7 @@ class Monitor[E] {
     message += s"$separator\n"
     reportError(message)
   }
-  
+
   /**
     * Reports a detected error.
     *
@@ -1795,6 +1800,34 @@ class Monitor[E] {
       throw MonitorError()
     }
   }
+
+  // ### TODO
+
+  /**
+    * Prints message, triggering event, and trace,
+    * when a monitor state succeeds (leads to `ok`).
+    *
+    * @param st    the state in which the success occurred.
+    * @param event the triggering event causing the success.
+    * @param trace the trace leading to the success. Includes only events that
+    *              triggered transitions leading to this state.
+    */
+
+  protected def reportSuccessOnEvent(st: state, event: E, trace: List[TraceEvent]): Unit = {
+    val headline = s"!!! DAUT TRANSITION OK in state $monitorName.${st.toStringState}"
+    val separator = "+" * headline.size
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    message += s"Event number $eventNumber: $event\n"
+    message += s"${formatTrace(trace)}\n"
+    message += s"$separator\n"
+    println(s"\n$message")
+    record(message)
+  }
+
+  // ###
 }
 
 /**
