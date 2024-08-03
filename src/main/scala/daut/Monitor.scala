@@ -1,8 +1,9 @@
 package daut
 
-import scala.collection.mutable.{Map => MutMap}
+import scala.collection.mutable.Map as MutMap
 import scala.language.{implicitConversions, reflectiveCalls}
 import java.io.{BufferedWriter, FileWriter, PrintWriter}
+import scala.sys.exit
 
 /**
   * Daut options to be set by the user.
@@ -66,6 +67,13 @@ object Util {
     val sec = ms / 1000
     println(s"\n--- Elapsed $text time: " + sec + "s" + "\n")
     result
+  }
+
+  def assertWellFormed(cond: Boolean, msg: String): Unit = {
+    if (!cond) {
+      println(s"*** Monitor is not wellformed: $msg")
+      exit(0)
+    }
   }
 }
 
@@ -529,6 +537,22 @@ class Monitor[E] {
     protected var name: String = "anonymous"
 
     /**
+      * Returns the string representation of a state with the associated label. If it is an anonymous state, it
+      * just returns the label. If it is a user defined case class it returns the string representation of
+      * the case class and then the label.
+      *
+      * @return string representation of state.
+      */
+
+    def toStringState: String = {
+      if (this.isInstanceOf[anonymous]) {
+        name
+      } else {
+        s"${this.toString}: $name"
+      }
+    }
+
+    /**
       * The transitions out of this state, represented as an (initially empty) partial
       * function from events to sets of states.
       */
@@ -537,7 +561,7 @@ class Monitor[E] {
 
     /**
       * True iff. the transition function of the state has been initialized.
-      * Used to determine with versions of always, watch, etc, to call:
+      * Used to determine wich versions of always, watch, etc, to call:
       * those of the monitor or those of the state.
       */
 
@@ -575,11 +599,26 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def watch(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.watch(ts)
       transitionsInitialized = true
       name = "watch"
+      transitions = ts
+      this
+    }
+
+    /**
+      * Labelled version of the `watch` method.
+      *
+      * @param values the label values.
+      * @param ts     the transition function.
+      * @return the state itself, allowing for further chained method calls.
+      */
+
+    def watch(values: Any*)(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.watch(values: _*)(ts)
+      transitionsInitialized = true
+      name = "watch" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
       this
     }
@@ -597,12 +636,27 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def always(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.always(ts)
       transitionsInitialized = true
       name = "always"
       transitions = ts andThen (_ + this)
+      this
+    }
+
+    /**
+      * Labelled version of the `always` method.
+      *
+      * @param values the label values.
+      * @param ts     the transition function.
+      * @return the state itself, allowing for further chained method calls.
+      */
+
+    def always(values: Any*)(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.always(values: _*)(ts)
+      transitionsInitialized = true
+      name = "always" + values.map(_.toString).mkString("(", ",", ")")
+      transitions = ts
       this
     }
 
@@ -618,13 +672,28 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def hot(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.hot(ts)
       transitionsInitialized = true
       name = "hot"
       transitions = ts
       isFinal = false
+      this
+    }
+
+    /**
+      * Labelled version of the `hot` method.
+      *
+      * @param values the label values.
+      * @param ts     the transition function.
+      * @return the state itself, allowing for further chained method calls.
+      */
+
+    def hot(values: Any*)(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.hot(values: _*)(ts)
+      transitionsInitialized = true
+      name = "hot" + values.map(_.toString).mkString("(", ",", ")")
+      transitions = ts
       this
     }
 
@@ -640,12 +709,27 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def wnext(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.wnext(ts)
       transitionsInitialized = true
       name = "wnext"
       transitions = ts orElse { case _ => error }
+      this
+    }
+
+    /**
+      * Labelled version of the `wnext` method.
+      *
+      * @param values the label values.
+      * @param ts     the transition function.
+      * @return the state itself, allowing for further chained method calls.
+      */
+
+    def wnext(values: Any*)(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.wnext(values: _*)(ts)
+      transitionsInitialized = true
+      name = "wnext" + values.map(_.toString).mkString("(", ",", ")")
+      transitions = ts
       this
     }
 
@@ -661,13 +745,28 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def next(ts: Transitions): state = {
       if (transitionsInitialized) return thisMonitor.next(ts)
       transitionsInitialized = true
       name = "next"
       transitions = ts orElse { case _ => error }
       isFinal = false
+      this
+    }
+
+    /**
+      * Labelled version of the `next` method.
+      *
+      * @param values the label values.
+      * @param ts     the transition function.
+      * @return the state itself, allowing for further chained method calls.
+      */
+
+    def next(values: Any*)(ts: Transitions): state = {
+      if (transitionsInitialized) return thisMonitor.next(values: _*)(ts)
+      transitionsInitialized = true
+      name = "next" + values.map(_.toString).mkString("(", ",", ")")
+      transitions = ts
       this
     }
 
@@ -685,7 +784,6 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
         if (transitionsInitialized) return thisMonitor.unless(ts1).watch(ts2)
@@ -711,7 +809,6 @@ class Monitor[E] {
       * @return the state itself, allowing for further chained method calls.
       */
 
-    // Was changed to infix. Was changed back.
     def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
       def watch(ts2: Transitions): state = {
         if (transitionsInitialized) return thisMonitor.until(ts1).watch(ts2)
@@ -744,7 +841,7 @@ class Monitor[E] {
         val newTrace = TraceEvent(eventNumber, event) :: trace
         for (ns <- newStates) {
           ns match {
-            case `error` => reportErrorOnEvent(event, newTrace)
+            case `error` => reportErrorOnEvent(this, event, newTrace)
             case `ok` | `stay` =>
             case ns =>
               if (!ns.isInitial) {
@@ -806,7 +903,6 @@ class Monitor[E] {
       * @return the state itself, but updated with the label.
       */
 
-    // Was changed to infix. Was changed back.
     def label(values: Any*): state = {
       name += values.map(_.toString).mkString("(", ",", ")")
       this
@@ -966,7 +1062,6 @@ class Monitor[E] {
     * @return an anonymous watch-state.
     */
 
-  // Was changed to infix. Was changed back.
   protected def watch(ts: Transitions): anonymous = new anonymous {
     this.watch(ts)
   }
@@ -995,7 +1090,6 @@ class Monitor[E] {
     * @return an anonymous always-state.
     */
 
-  // Was changed to infix. Was changed back.
   protected def always(ts: Transitions): anonymous = new anonymous {
     this.always(ts)
   }
@@ -1023,7 +1117,6 @@ class Monitor[E] {
     * @return an anonymous hot-state.
     */
 
-  // Was changed to infix. Was changed back.
   protected def hot(ts: Transitions): anonymous = new anonymous {
     this.hot(ts)
   }
@@ -1079,7 +1172,6 @@ class Monitor[E] {
     * @return an anonymous next-state.
     */
 
-  // Was changed to infix. Was changed back.
   protected def next(ts: Transitions): anonymous = new anonymous {
     this.next(ts)
   }
@@ -1111,7 +1203,6 @@ class Monitor[E] {
 
 
   protected def unless(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    // Was changed to infix. Was changed back.
     def watch(ts2: Transitions): anonymous = new anonymous {
       this.unless(ts1).watch(ts2)
     }
@@ -1130,9 +1221,7 @@ class Monitor[E] {
     * @return an anonymous until-state.
     */
 
-  // Was changed to infix. Was changed back.
   protected def until(ts1: Transitions): Object {def watch(ts2: Transitions): state} = new {
-    // Was changed to infix. Was changed back.
     def watch(ts2: Transitions): anonymous = new anonymous {
       this.until(ts1).watch(ts2)
     }
@@ -1488,13 +1577,14 @@ class Monitor[E] {
       val theEndStates = states.getAllStates
       val hotStates = theEndStates filter (!_.isFinal)
       if (hotStates.nonEmpty) {
+        val headline = s"*** Daut omission errors for $monitorName:"
+        val separator = "=" * headline.size
         println()
-        println(s"*** Non final Daut $monitorName states:")
-        println()
+        println(separator)
+        println(headline)
+        println(separator)
         for (hotState <- hotStates) {
-          print(hotState)
-          reportErrorAtEnd(hotState.trace)
-          println()
+          reportErrorAtEnd(hotState, hotState.trace)
         }
       }
       for (monitor <- monitors) {
@@ -1503,6 +1593,7 @@ class Monitor[E] {
       for (monitor <- abstractMonitors) {
         monitor.end()
       }
+      println()
       println(s"Monitor $monitorName detected $errorCount errors!")
     }
     this
@@ -1578,7 +1669,7 @@ class Monitor[E] {
     println(s"--- $monitorName:")
     println("[memory] ")
     for (s <- states.getMainStates) {
-      println(s"  $s")
+      println(s"  ${s.toStringState}")
       if (DautOptions.DEBUG_TRACES) {
         printTrace(s.trace, 4)
       }
@@ -1630,30 +1721,44 @@ class Monitor[E] {
     * Prints error message, triggering event, and trace,
     * and then calls `reportError()`.
     *
+    * @param st the state in which the error occurred.
     * @param event the triggering event causing the error.
     * @param trace the trace leading to the error. Includes only events that
     *              triggered transitions leading to this state.
     */
 
-  protected def reportErrorOnEvent(event: E, trace: List[TraceEvent]): Unit = {
-    println("\n*** ERROR")
-    println(s"current event: $event event number $eventNumber")
+  protected def reportErrorOnEvent(st: state, event: E, trace: List[TraceEvent]): Unit = {
+    val headline = s"*** DAUT TRANSITION ERROR in state ${st.toStringState}"
+    val separator = "-" * headline.size
+    println()
+    println(separator)
+    println(headline)
+    println(separator)
+    println(s"event number $eventNumber: $event")
     printTrace(trace)
     reportError()
+    println(separator)
   }
 
   /**
     * Prints end of trace error message, prints the trace leading to the error,
     * and then calls `reportError()`.
     *
+    * @param st the violating hot state at the end of the trace.
     * @param trace the trace leading to the error. Includes only events that
     *              triggered transitions leading to this state.
     */
 
-  protected def reportErrorAtEnd(trace: List[TraceEvent]): Unit = {
-    println("\n*** ERROR AT END OF TRACE")
+  protected def reportErrorAtEnd(st: state, trace: List[TraceEvent]): Unit = {
+    val headline = s"*** DAUT OMISSION ERROR in state $monitorName.${st.toStringState}"
+    val separator = "-" * headline.size
+    println()
+    println(separator)
+    println(headline)
+    println(separator)
     printTrace(trace)
     reportError()
+    println(separator)
   }
 
   /**

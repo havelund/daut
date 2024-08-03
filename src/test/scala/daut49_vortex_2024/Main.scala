@@ -32,7 +32,7 @@ class CommandMonitor1 extends Monitor[Event] {
   always {
     case Dispatch(taskId, cmdNum, time1) =>
       hot {
-        case Dispatch(`taskId`, `cmdNum`, time2) => error
+        case Dispatch(`taskId`, `cmdNum`, _) => error
         case Complete(`taskId`, `cmdNum`, time2) if time2 - time1 <= 20 => ok
       }
   }
@@ -50,7 +50,7 @@ class CommandMonitor2(db: DB) extends Monitor[Event] {
   always {
     case Dispatch(taskId, cmdNum, time1) =>
       hot {
-        case Dispatch(`taskId`, `cmdNum`, time2) => error
+        case Dispatch(`taskId`, `cmdNum`, _) => error
         case Complete(`taskId`, `cmdNum`, time2) if time2 - time1 <= 20 =>
           db.executed(taskId, cmdNum, time1, time2)
           execTimes = execTimes :+ (time2-time1)
