@@ -18,6 +18,13 @@ object DautOptions {
   var DEBUG: Boolean = false
 
   /**
+    * When false only events that trigger transitions in a monitor
+    * or or its sub monitors are shown in `DEBUG=true` mode.
+    */
+
+  var DEBUG_ALL_EVENTS: Boolean = false
+
+  /**
     * When true traces will be printed as part of states in memory
     * in debugging mode (when DEBUG == true).
     */
@@ -1561,7 +1568,7 @@ class Monitor[E] {
     for (monitor <- monitors) {
       monitor.verify(event)
     }
-    if (monitorAtTop && DautOptions.DEBUG && Monitor.transitionsTriggered) {
+    if (monitorAtTop && DautOptions.DEBUG && (DautOptions.DEBUG_ALL_EVENTS || Monitor.transitionsTriggered)) {
       println("\n===[" + event + "]===\n")
       printStates()
     }
