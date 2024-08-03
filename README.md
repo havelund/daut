@@ -1596,7 +1596,7 @@ The following method allows to add arbitrary text messages as recordings in a mo
 def record(message: String): Unit
 ```
 
-At any point in time the current recordings of a monitor, and all its submonitors, can be extracted with the method:
+At any point in time, the current recordings (including error messages) of a monitor, and all its submonitors, can be extracted with the method:
 
 ```scala
 def getRecordings(): List[String]

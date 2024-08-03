@@ -391,7 +391,7 @@ class Monitor[E] {
     */
 
   def record(message: String): Unit = {
-    recordings = recordings :+ s"- Recording [${monitorName}] $message"
+    recordings = recordings :+ s"Recording in monitor [${monitorName}]\n$message"
   }
 
   var STOP_ON_ERROR: Boolean = false
@@ -1134,7 +1134,7 @@ class Monitor[E] {
     * at the end of an anonymous `hot` state.
     *
     * @param values the label values.
-    * @param ts the transition function.
+    * @param ts     the transition function.
     * @return an anonymous hot-state with a label.
     */
 
@@ -1348,17 +1348,6 @@ class Monitor[E] {
 
   protected def ensure(b: Boolean): state = {
     if (b) ok else error
-  }
-
-  /**
-    * Checks whether the condition `b` is true, and if not, reports an error
-    * on standard out.
-    *
-    * @param b the Boolean condition to be checked.
-    */
-
-  protected def check(b: Boolean): Unit = {
-    if (!b) reportError()
   }
 
   /**
@@ -1590,7 +1579,7 @@ class Monitor[E] {
       val theEndStates = states.getAllStates
       val hotStates = theEndStates filter (!_.isFinal)
       if (hotStates.nonEmpty) {
-        val headline = s"*** Daut omission errors for $monitorName:"
+        val headline = s"*** Daut omission errors for $monitorName"
         val separator = "=" * headline.size
         println()
         println(separator)
@@ -1684,7 +1673,7 @@ class Monitor[E] {
     for (s <- states.getMainStates) {
       println(s"  ${s.toStringState}")
       if (DautOptions.DEBUG_TRACES) {
-        printTrace(s.trace, 4)
+        println(formatTrace(s.trace, 4))
       }
     }
     println
@@ -1693,7 +1682,7 @@ class Monitor[E] {
       for (s <- states.getIndexedSet(index)) {
         println(s"  $s")
         if (DautOptions.DEBUG_TRACES) {
-          printTrace(s.trace, 4)
+          println(formatTrace(s.trace, 4))
         }
       }
     }
@@ -1716,48 +1705,50 @@ class Monitor[E] {
   }
 
   /**
-    * Prints a trace associated with a state.
+    * Formats a trace associated with a state.
     *
     * @param trace  the trace to print.
-    * @param indent number of spaces to indent (depends on context)
+    * @param indent number of spaces to indent (depends on context).
+    * @return the formatted trace.
     */
 
-  def printTrace(trace: List[TraceEvent], indent: Int = 0): Unit = {
+  def formatTrace(trace: List[TraceEvent], indent: Int = 0): String = {
     val indentation = " " * indent
-    println(indentation + "Trace:")
+    var message = indentation + "Trace:"
     for (event <- trace.reverse) {
-      println(indentation + s"  $event")
+      message += "\n" + indentation + s"  $event"
     }
+    message
   }
 
   /**
     * Prints error message, triggering event, and trace,
     * and then calls `reportError()`.
     *
-    * @param st the state in which the error occurred.
+    * @param st    the state in which the error occurred.
     * @param event the triggering event causing the error.
     * @param trace the trace leading to the error. Includes only events that
     *              triggered transitions leading to this state.
     */
 
   protected def reportErrorOnEvent(st: state, event: E, trace: List[TraceEvent]): Unit = {
-    val headline = s"*** DAUT TRANSITION ERROR in state ${st.toStringState}"
+    val headline = s"*** DAUT TRANSITION ERROR in state $monitorName.${st.toStringState}"
     val separator = "-" * headline.size
-    println()
-    println(separator)
-    println(headline)
-    println(separator)
-    println(s"event number $eventNumber: $event")
-    printTrace(trace)
-    reportError()
-    println(separator)
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    message += s"Event number $eventNumber: $event\n"
+    message += s"${formatTrace(trace)}\n"
+    message += s"$separator\n"
+    reportError(message)
   }
 
   /**
     * Prints end of trace error message, prints the trace leading to the error,
     * and then calls `reportError()`.
     *
-    * @param st the violating hot state at the end of the trace.
+    * @param st    the violating hot state at the end of the trace.
     * @param trace the trace leading to the error. Includes only events that
     *              triggered transitions leading to this state.
     */
@@ -1765,23 +1756,23 @@ class Monitor[E] {
   protected def reportErrorAtEnd(st: state, trace: List[TraceEvent]): Unit = {
     val headline = s"*** DAUT OMISSION ERROR in state $monitorName.${st.toStringState}"
     val separator = "-" * headline.size
-    println()
-    println(separator)
-    println(headline)
-    println(separator)
-    printTrace(trace)
-    reportError()
-    println(separator)
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    message += s"${formatTrace(trace)}\n"
+    message += s"$separator\n"
+    reportError(message)
   }
-
+  
   /**
-    * Prints a very visible ERROR banner, in case `PRINT_ERROR_BANNER` is true.
-    * Updates error count.
+    * Reports a detected error.
+    *
+    * @param e text string explaining the error. This will be printed as part of the
+    *          error message.
     */
 
-  protected def reportError(): Unit = {
-    errorCount += 1
-    println(s"$monitorName error # $errorCount")
+  protected def reportError(message: String): Unit = {
     if (DautOptions.PRINT_ERROR_BANNER) {
       println(
         s"""
@@ -1794,25 +1785,15 @@ class Monitor[E] {
            |
         """.stripMargin)
     }
+    println(s"\n$message")
+    record(message)
+    errorCount += 1
+    println(s"$monitorName error # $errorCount")
     callBack()
     if (STOP_ON_ERROR) {
       println("\n*** terminating on first error!\n")
       throw MonitorError()
     }
-  }
-
-  /**
-    * Reports a detected error.
-    *
-    * @param e text string explaining the error. This will be printed as part of the
-    *          error message.
-    */
-
-  protected def reportError(e: String): Unit = {
-    println("***********")
-    println(s"ERROR : $e")
-    println("***********")
-    reportError()
   }
 }
 

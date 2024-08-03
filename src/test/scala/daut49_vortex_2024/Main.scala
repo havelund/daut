@@ -59,7 +59,7 @@ class CommandMonitor2(db: DB) extends Monitor[Event] {
 
   override def end(): this.type = {
     val averageExecutionTime = average(execTimes)
-    check(averageExecutionTime <= 15)
+    check(averageExecutionTime <= 15, s"average execution time > 15")
     println(s"Average = $averageExecutionTime")
     super.end()
   }
