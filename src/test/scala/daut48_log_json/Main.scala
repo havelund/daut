@@ -6,11 +6,10 @@ memory as JSON objects in a jsonl file. The example is based on a concrete monit
 that sends events to an abstract monitor.
  */
 
-import org.json4s._
+import org.json4s.*
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.write
-
-import daut.{Monitor}
+import daut.{DautOptions, Monitor}
 
 // Abstract events:
 
@@ -85,7 +84,7 @@ object Main {
       CommandComplete(1, 2)
     )
 
-    Monitor.SHOW_TRANSITIONS = true
+    DautOptions.SHOW_TRANSITIONS = true
     Monitor.logTransitionsAsJson("output.jsonl", encoder)
 
     val monitor = new ConcreteMonitor

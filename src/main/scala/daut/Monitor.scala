@@ -30,7 +30,14 @@ object DautOptions {
     */
 
   var DEBUG_TRACES: Boolean = true
+  
+  /**
+    * Option, which when set to true will cause events to be printed that trigger transitions in any monitor.
+    * Default value is false.
+    */
 
+  var SHOW_TRANSITIONS: Boolean = false
+  
   /**
     * When true will cause a big ERROR banner to be printed
     * on standard out upon detection of a specification violation, making it easier
@@ -222,7 +229,7 @@ class Monitor[E] {
       }
       if (transitionTriggered) {
         Monitor.transitionsTriggered = true
-        if (SHOW_TRANSITIONS || Monitor.SHOW_TRANSITIONS) {
+        if (SHOW_TRANSITIONS || DautOptions.SHOW_TRANSITIONS) {
           val shownEvent = renderEventAs(event) match {
             case None => event.toString
             case Some(s) => s
@@ -1934,14 +1941,7 @@ object Monitor {
     */
 
   var transitionsTriggered: Boolean = false
-
-  /**
-    * Option, which when set to true will cause events to be printed that trigger transitions in any monitor.
-    * Default value is false.
-    */
-
-  var SHOW_TRANSITIONS: Boolean = false
-
+  
   /**
     * Opens a file for writing events that trigger transitions as JSON objects. It should be a `.jsonl` file.
     * The caller must define the function for mapping events to JSON objects. If this function returns

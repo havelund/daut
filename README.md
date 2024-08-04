@@ -1303,6 +1303,8 @@ monitor step to be printed, including event and resulting set of states. Default
 - `DautOptions.RECORD_OK` (static variable): when set to true, every `ok` 
 (success) reached will be reported. Default is false.
 
+- `DautOptions.SHOW_TRANSITIONS` (static variable): when set to true, events that trigger transitions are shown. Default is false.
+
 - `Monitor.STOP_ON_ERROR`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
 
 
@@ -1650,7 +1652,7 @@ as the default `e.toString()`. The user can override the method to instead retur
 An alternative is to set the following variable to true, which will cause all events that trigger a transition, in any monitor, to be printed (`Monitor` is an object).
 
 ```scala
-Monitor.SHOW_TRANSITIONS: Boolean = true
+DautOptions.SHOW_TRANSITIONS: Boolean = true
 ```
 
 #### Writing Events as JSON Objects to Permanent Memory
