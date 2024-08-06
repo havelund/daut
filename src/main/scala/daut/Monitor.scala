@@ -3,7 +3,9 @@ package daut
 import scala.collection.mutable.Map as MutMap
 import scala.language.{implicitConversions, reflectiveCalls}
 import java.io.{BufferedWriter, FileWriter, PrintWriter}
+import scala.compiletime.uninitialized
 import scala.sys.exit
+import scala.reflect.Selectable.reflectiveSelectable
 
 /**
   * Daut options to be set by the user.
@@ -346,7 +348,7 @@ class Monitor[E] {
     * this monitor to call the `end()` method on the other monitors.
     */
 
-  private var abstractMonitors: List[Monitor[_]] = List()
+  private var abstractMonitors: List[Monitor[?]] = List()
 
   /**
     * The active states of the monitor, excluding those of its sub-monitors.
@@ -638,7 +640,7 @@ class Monitor[E] {
       */
 
     def watch(values: Any*)(ts: Transitions): state = {
-      if (transitionsInitialized) return thisMonitor.watch(values: _*)(ts)
+      if (transitionsInitialized) return thisMonitor.watch(values*)(ts)
       transitionsInitialized = true
       name = "watch" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
@@ -675,7 +677,7 @@ class Monitor[E] {
       */
 
     def always(values: Any*)(ts: Transitions): state = {
-      if (transitionsInitialized) return thisMonitor.always(values: _*)(ts)
+      if (transitionsInitialized) return thisMonitor.always(values*)(ts)
       transitionsInitialized = true
       name = "always" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
@@ -712,7 +714,7 @@ class Monitor[E] {
       */
 
     def hot(values: Any*)(ts: Transitions): state = {
-      if (transitionsInitialized) return thisMonitor.hot(values: _*)(ts)
+      if (transitionsInitialized) return thisMonitor.hot(values*)(ts)
       transitionsInitialized = true
       name = "hot" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
@@ -748,7 +750,7 @@ class Monitor[E] {
       */
 
     def wnext(values: Any*)(ts: Transitions): state = {
-      if (transitionsInitialized) return thisMonitor.wnext(values: _*)(ts)
+      if (transitionsInitialized) return thisMonitor.wnext(values*)(ts)
       transitionsInitialized = true
       name = "wnext" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
@@ -785,7 +787,7 @@ class Monitor[E] {
       */
 
     def next(values: Any*)(ts: Transitions): state = {
-      if (transitionsInitialized) return thisMonitor.next(values: _*)(ts)
+      if (transitionsInitialized) return thisMonitor.next(values*)(ts)
       transitionsInitialized = true
       name = "next" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
@@ -923,7 +925,7 @@ class Monitor[E] {
       * @return the state itself, but updated with the label.
       */
 
-    def label(values: Any*): state = {
+    infix def label(values: Any*): state = {
       name += values.map(_.toString).mkString("(", ",", ")")
       this
     }
@@ -1097,7 +1099,7 @@ class Monitor[E] {
 
   protected def watch(values: Any*)(ts: Transitions): anonymous = new anonymous {
     this.watch(ts)
-  }.label(values: _*).asInstanceOf[anonymous]
+  }.label(values*).asInstanceOf[anonymous]
 
   /**
     * Returns an always-state, where the transition function is the transition function provided,
@@ -1125,7 +1127,7 @@ class Monitor[E] {
 
   protected def always(values: Any*)(ts: Transitions): anonymous = new anonymous {
     this.always(ts)
-  }.label(values: _*).asInstanceOf[anonymous]
+  }.label(values*).asInstanceOf[anonymous]
 
   /**
     * Returns a hot-state, where the transition function is the transition function provided.
@@ -1152,7 +1154,7 @@ class Monitor[E] {
 
   protected def hot(values: Any*)(ts: Transitions): anonymous = new anonymous {
     this.hot(ts)
-  }.label(values: _*).asInstanceOf[anonymous]
+  }.label(values*).asInstanceOf[anonymous]
 
   /**
     * Returns a wnext-state (weak next), where the transition function is the transition function provided,
@@ -1180,7 +1182,7 @@ class Monitor[E] {
 
   protected def wnext(values: Any*)(ts: Transitions): anonymous = new anonymous {
     this.wnext(ts)
-  }.label(values: _*).asInstanceOf[anonymous]
+  }.label(values*).asInstanceOf[anonymous]
 
   /**
     * Returns a next-state (strong next), where the transition function is the transition function provided,
@@ -1207,7 +1209,7 @@ class Monitor[E] {
 
   protected def next(values: Any*)(ts: Transitions): anonymous = new anonymous {
     this.next(ts)
-  }.label(values: _*).asInstanceOf[anonymous]
+  }.label(values*).asInstanceOf[anonymous]
 
   /**
     * An expression of the form `unless {ts1} watch {ts2`} watches `ts2` repeatedly
@@ -1929,8 +1931,8 @@ class Coloring {
   */
 
 object Monitor {
-  private var jsonWriter: PrintWriter = _
-  private var jsonEncoder: Any => Option[String] = _
+  private var jsonWriter: PrintWriter = uninitialized
+  private var jsonEncoder: Any => Option[String] = uninitialized
   private val eventColoring: Coloring = Coloring()
 
   /**

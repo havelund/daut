@@ -5,15 +5,17 @@ package daut46_network_akka
   * which communicate.
   */
 
-import daut.{Monitor}
+import daut.Monitor
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.ActorSystem
 
+import scala.compiletime.uninitialized
+
 // Reference type needed for circular dependencies
 
 class ActorReference[T] {
-  var actorRef: ActorRef[T] = _
+  var actorRef: ActorRef[T] = uninitialized
 }
 
 // Monitor Event Types

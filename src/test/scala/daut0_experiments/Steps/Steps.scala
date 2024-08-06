@@ -1,5 +1,7 @@
 package daut0_experiments.Steps
 
+/*
+
 import daut0_experiments.Events._
 
 import daut._
@@ -248,3 +250,7 @@ class Observe_03[T1, T2, T3](
   }
 
 }
+
+ */
+
+class EmptySteps {}

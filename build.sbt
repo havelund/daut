@@ -31,5 +31,13 @@ libraryDependencies ++= Seq(
 scalacOptions += "-explain"
 scalacOptions += "-explain-cyclic"
 
+scalacOptions ++= Seq(
+  "-deprecation",            // Emit warning and location for usages of deprecated APIs
+  "-feature",                // Emit warning and location for usages of features that should be imported explicitly
+  "-unchecked",              // Enable additional warnings where generated code depends on assumptions
+  // "-Wshadow:_",                // Enable recommended additional warnings
+  "-Xfatal-warnings"         // Fail the compilation if there are any warnings
+)
+
 enablePlugins(GenerateRunScript)
 

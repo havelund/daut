@@ -1,5 +1,7 @@
 package daut0_experiments.Requirements
 
+/*
+
 import daut0_experiments.Events._
 import daut0_experiments.Steps._
 
@@ -415,3 +417,7 @@ object Requirements {
 // END OF TRAINING EXERCISE
 //
 // ---------------------------------------------------------------------------------------------------------------------------------------------
+
+ */
+
+class EmptyRequirements {}

@@ -1,6 +1,8 @@
 
 package daut0_experiments
 
+/*
+
 // Note 01 (original log):
 // The original log file is a table. Each row is a complete log of all relevant data, log entries are at 1 Hz.
 //
@@ -156,3 +158,6 @@ object Main {
   }
 }
 
+ */
+
+class EmptyMain {}
