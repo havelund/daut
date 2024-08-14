@@ -720,6 +720,7 @@ class Monitor[E] {
       transitionsInitialized = true
       name = "hot" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
+      isFinal = false
       this
     }
 
@@ -793,6 +794,7 @@ class Monitor[E] {
       transitionsInitialized = true
       name = "next" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
+      isFinal = false
       this
     }
 
