@@ -326,6 +326,8 @@ clarity to sub-concepts.
 
 This "state machine" contains no loops. The next example introduces a looping state machine, with data.
 
+Note that a text string can be passed to `error` as shown. This also holds for `ok`. These strings will be printed in various output.
+
 ## Transitions Returning a Set of States
 
 As mentioned already, a transition technically returns a set of states, each of which has to lead to success. Effectively, this set represents a _conjunction_: all these result states have to lead to succces. As an example of how this concept can be utilized for spceification of properties, consider the following property:

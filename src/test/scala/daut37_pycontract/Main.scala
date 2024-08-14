@@ -128,6 +128,8 @@ class LogReader(fileName: String) {
 
 object VerifyNokiaLog {
   def main(args: Array[String]): Unit = {
+    DautOptions.PRINT_ERROR_BANNER = false
+    DautOptions.RECORD_OK = true
     val csvFile = new LogReader("src/test/scala/daut37_pycontract/log_msl_timed.csv")
     val monitor = new CommandExecution
     Util.time("processing log") {

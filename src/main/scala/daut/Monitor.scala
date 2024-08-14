@@ -122,14 +122,16 @@ class Monitor[E] {
   /**
     * Used to record an event that causes a monitor state to trigger a transition.
     * Each state contains a list of trace events that lead to that state.
-    * Is printed out when an error is detected.
+    * Is printed out when an error, or ok if `DautOptions.RECORD_OK == true`, is detected,
+    * or in debug mode: `DautOptions.DEBUG == true`.
     *
+    * @param st: the source state of the transition.
     * @param eventNr number of event.
     * @param event   the event.
     */
 
-  case class TraceEvent(eventNr: Long, event: E) {
-    override def toString(): String = s"$eventNr : $event"
+  case class TraceEvent(st: String, eventNr: Long, event: String) {
+    override def toString(): String = s"State: $st, EventNr: $eventNr, Event: $event"
   }
 
   /**
@@ -572,7 +574,7 @@ class Monitor[E] {
       if (this.isInstanceOf[anonymous]) {
         name
       } else {
-        s"${this.toString}: $name"
+        s"${this.toString}.$name"
       }
     }
 
@@ -856,14 +858,14 @@ class Monitor[E] {
     def apply(event: E): Option[Set[state]] =
       if (transitions.isDefinedAt(event)) {
         val newStates = transitions(event)
-        val newTrace = TraceEvent(eventNumber, event) :: trace
+        val newTrace = TraceEvent(this.toStringState, eventNumber, event.toString) :: trace
         for (ns <- newStates) {
           ns match {
             case `stay` =>
-            case `error` => reportErrorOnEvent(this, event, newTrace)
+            case `error` => reportErrorOnEvent(this, event, newTrace, error.message)
             case `ok` =>
               if (DautOptions.RECORD_OK) {
-                reportSuccessOnEvent(this, event, newTrace) // TODO
+                reportSuccessOnEvent(this, event, newTrace, ok.message)
               }
             case ns =>
               if (!ns.isInitial) {
@@ -949,26 +951,46 @@ class Monitor[E] {
   protected case object stay extends state
 
   /**
-    * Special state indicating successful termination.
+    * Special state indicating successful termination. It contains an optional
+    * message which is set if the `ok(String)` method is called with a string parameter.
     */
 
-  protected case object ok extends state
+  protected case object ok extends state {
+    var message: Option[String] = None
+  }
 
   /**
-    * Special state indicating a specification violation.
+    * Prints a message and returns an `ok` state indicating a specification success.
+    *
+    * @param msg message to be printed on standard out.
+    * @return the `ok` state.
     */
 
-  protected case object error extends state
+  protected def ok(msg: String): state = {
+    println("\n+++ ok state reached: " + msg + "\n")
+    ok.message = Some(msg)
+    ok
+  }
 
   /**
-    * Returns an `error` state indicating a specification violation.
+    * Special state indicating a specification violation. It contains an optional
+    * message which is set if the `error(String)` method is called with a string parameter.
+    */
+
+  protected case object error extends state {
+    var message: Option[String] = None
+  }
+
+  /**
+    * Prints a message and returns an `error` state indicating a specification violation.
     *
     * @param msg message to be printed on standard out.
     * @return the `error` state.
     */
 
   protected def error(msg: String): state = {
-    println("\n*** " + msg + "\n")
+    println("\n*** error state reached: " + msg + "\n")
+    error.message = Some(msg)
     error
   }
 
@@ -1686,7 +1708,7 @@ class Monitor[E] {
     println("[memory] ")
     for (s <- states.getMainStates) {
       println(s"  ${s.toStringState}")
-      if (DautOptions.DEBUG_TRACES) {
+      if (DautOptions.DEBUG_TRACES && !s.trace.isEmpty) {
         println(formatTrace(s.trace, 4))
       }
     }
@@ -1695,7 +1717,7 @@ class Monitor[E] {
       println(s"[index=$index]")
       for (s <- states.getIndexedSet(index)) {
         println(s"  $s")
-        if (DautOptions.DEBUG_TRACES) {
+        if (DautOptions.DEBUG_TRACES && !s.trace.isEmpty) {
           println(formatTrace(s.trace, 4))
         }
       }
@@ -1743,15 +1765,21 @@ class Monitor[E] {
     * @param event the triggering event causing the error.
     * @param trace the trace leading to the error. Includes only events that
     *              triggered transitions leading to this state.
+    * @param msg   a user provided optional message.
     */
 
-  protected def reportErrorOnEvent(st: state, event: E, trace: List[TraceEvent]): Unit = {
+  protected def reportErrorOnEvent(st: state, event: E, trace: List[TraceEvent], msg : Option[String]): Unit = {
     val headline = s"*** DAUT TRANSITION ERROR in state $monitorName.${st.toStringState}"
     val separator = "-" * headline.size
     var message = ""
     message += s"$separator\n"
     message += s"$headline\n"
     message += s"$separator\n"
+    msg match {
+      case None =>
+      case Some(txt) =>
+        message += s"$txt\n"
+    }
     message += s"Event number $eventNumber: $event\n"
     message += s"${formatTrace(trace)}\n"
     message += s"$separator\n"
@@ -1810,8 +1838,6 @@ class Monitor[E] {
     }
   }
 
-  // ### TODO
-
   /**
     * Prints message, triggering event, and trace,
     * when a monitor state succeeds (leads to `ok`).
@@ -1820,23 +1846,27 @@ class Monitor[E] {
     * @param event the triggering event causing the success.
     * @param trace the trace leading to the success. Includes only events that
     *              triggered transitions leading to this state.
+    * @param msg   a user provided optional message.
     */
 
-  protected def reportSuccessOnEvent(st: state, event: E, trace: List[TraceEvent]): Unit = {
+  protected def reportSuccessOnEvent(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
     val headline = s"!!! DAUT TRANSITION OK in state $monitorName.${st.toStringState}"
     val separator = "+" * headline.size
     var message = ""
     message += s"$separator\n"
     message += s"$headline\n"
     message += s"$separator\n"
+    msg match {
+      case None =>
+      case Some(txt) =>
+        message += s"$txt\n"
+    }
     message += s"Event number $eventNumber: $event\n"
     message += s"${formatTrace(trace)}\n"
     message += s"$separator\n"
     println(s"\n$message")
     record(message)
   }
-
-  // ###
 }
 
 /**
