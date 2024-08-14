@@ -409,7 +409,8 @@ class Monitor[E] {
     */
 
   def record(message: String): Unit = {
-    recordings = recordings :+ s"Recording in monitor [${monitorName}]\n$message"
+    // recordings = recordings :+ s"Recording in monitor [${monitorName}]\n$message"
+    recordings = recordings :+ message
   }
 
   var STOP_ON_ERROR: Boolean = false
@@ -1613,7 +1614,7 @@ class Monitor[E] {
   def end(): this.type = {
     if (!endCalled) {
       endCalled = true
-      debug(s"Ending Daut trace evaluation for $monitorName")
+      // debug(s"Ending Daut trace evaluation for $monitorName")
       val theEndStates = states.getAllStates
       val hotStates = theEndStates filter (!_.isFinal)
       if (hotStates.nonEmpty) {
@@ -1634,7 +1635,7 @@ class Monitor[E] {
         monitor.end()
       }
       println()
-      println(s"Monitor $monitorName detected $errorCount errors!")
+      // println(s"Monitor $monitorName detected $errorCount errors!")
     }
     this
   }
@@ -1832,7 +1833,7 @@ class Monitor[E] {
     println(s"\n$message")
     record(message)
     errorCount += 1
-    println(s"$monitorName error # $errorCount")
+    // println(s"$monitorName error # $errorCount")
     callBack()
     if (STOP_ON_ERROR) {
       println("\n*** terminating on first error!\n")
