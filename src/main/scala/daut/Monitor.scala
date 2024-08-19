@@ -384,6 +384,18 @@ class Monitor[E] {
 
   private var endCalled: Boolean = false
 
+  // ### TODO
+
+  /**
+    * Set to true when a summary of this monitor has been printed.
+    * It is needed due to abstract monitors. An abstract monitor
+    * can be referenced from more than one other monitor.
+    */
+
+  var summaryPrinted: Boolean = false
+
+  // ###
+
   /**
     * Number of violation of the specification encountered.
     */
@@ -1637,8 +1649,28 @@ class Monitor[E] {
       println()
       // println(s"Monitor $monitorName detected $errorCount errors!")
     }
+    if (monitorAtTop) {
+      printSummary()
+    }
     this
   }
+
+  // ### TODO
+
+  private def printSummary(): Unit = {
+    if (!summaryPrinted) {
+      if (monitorAtTop) {
+        println(s"Summary of top monitor $monitorName:")
+      }
+      println(f"${thisMonitor.monitorName}%-20s: $getErrorCount")
+      summaryPrinted = true
+      for (monitor <- monitors ++ abstractMonitors) {
+        monitor.printSummary()
+      }
+    }
+  }
+
+  // ###
 
   /**
     * Allows applying a monitor `M` to an event `e`, as follows: `M(e)`.
@@ -1976,7 +2008,7 @@ object Monitor {
     */
 
   var transitionsTriggered: Boolean = false
-  
+
   /**
     * Opens a file for writing events that trigger transitions as JSON objects. It should be a `.jsonl` file.
     * The caller must define the function for mapping events to JSON objects. If this function returns

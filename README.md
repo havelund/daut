@@ -206,7 +206,7 @@ event, where the `x` is the same as was previously acquired (caused by the quote
 
      release(`t`,`x`)
      
-event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor. An additional state `stay` as a result of a transition indicates that we stay in the current state.
+event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor. 
 
 #### Applying the Monitor
 
@@ -1055,7 +1055,41 @@ class AcquireReleaseTextBookAutomaton extends Monitor[LockEvent] {
 }
 ```
 
-**Note:** One has to ensure that only events relevant for the property are submitted to the monitor in order to use the states `wnext` and `next`. See the next section.
+**Note:** One has to ensure that only events relevant for the property are submitted to the monitor in order to use the states `wnext` and `next`. 
+
+## The stay Directive
+
+When using indexing combined with `wnext` and `next` states, it can be necessary
+to explicitly indicate that a certain event in a certain state is acceptable and just causes
+the monitor to stay in that state, corresponding to a self-loop in automaton theory (a transition where the source state and the target state is the same). Let us modify the requirement to allow reentrant locks, meaning that a thread that a task that currently holds the lock can acquire it again without causing a deadlock.
+
+- _"A task acquiring a lock should eventually release it. At most one task
+can acquire a lock at a time. Howevever, locks are reentrant.
+A task cannot release a lock it has not acquired."_.
+
+This can be expressed using `stay` as "target state", which means the current state we are in.
+
+```scala
+class AcquireReleaseTextBookStayAutomaton extends Monitor[LockEvent] {
+  override def keyOf(event: LockEvent): Option[Int] = ... // as above
+
+  def doAcquire(): state =
+    wnext {
+      case acquire(t, x) => doRelease(t, x)
+    }
+
+  def doRelease(t: Int, x: Int) =
+    next {
+      case acquire(`t`, `x`) => stay // the lock is reentrant
+      case release(`t`, `x`) => doAcquire()
+    } label(t, x)
+
+  doAcquire()
+}
+```
+
+**Note:** The `stay` state can also be used in other context (without indexing). It can e.g. be used
+if some side effect is needed, but we want to stay in the current state. 
 
 ## Monitoring Only Relevant Events
 
