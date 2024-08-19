@@ -30,7 +30,7 @@ class AcquireReleaseTextBookStayAutomaton extends Monitor[LockEvent] {
       case acquire(t, x) => doRelease(t, x)
     }
 
-  def doRelease(t: Int, x: Int) =
+  def doRelease(t: Int, x: Int): state =
     next {
       case acquire(`t`, `x`) => stay // the lock is reentrant
       case release(`t`, `x`) => doAcquire()

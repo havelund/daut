@@ -47,7 +47,14 @@ object DautOptions {
     * The default value is false.
     */
 
-  var PRINT_ERROR_BANNER = false
+  var PRINT_ERROR_BANNER: Boolean = false
+
+  /**
+    * When true all messages will be printed again when `end()` is called.
+    * The default value is true.
+    */
+
+  var PRINT_ERRORS_AT_END: Boolean = true
 
   /**
     * When true, reaching `ok` states will be recorded, indicating
@@ -110,6 +117,260 @@ import daut.Util._
 case class MonitorError() extends RuntimeException
 
 /**
+  * Represents the errors caught by a monitor for printing at the end of an
+  * analysis when `end()` is called on the top monitor. It contains results
+  * of sub monitors, as well as abstract monitors referred to.
+  *
+  * @param monitorName: the name of the monitor.
+  * @param errorCount: the number of errors detected, not including sub monitor errors.
+  * @param errorStatusOfSubMonitors: the list of error status for sub monitors.
+  * @param errorStatusOfAbstractMonitors: the list of error statys for abstract monitors.
+  */
+
+case class ErrorStatus(
+                        monitorName: String,
+                        errorCount: Int,
+                        errorStatusOfSubMonitors: List[ErrorStatus],
+                        errorStatusOfAbstractMonitors: List[ErrorStatus]) {
+  override def toString: String = {
+    toStringIndented(0)
+  }
+
+  /**
+    * toString method taking indentation into account.
+    *
+    * @param indent: the number of indentations to make.
+    * @return the string representation of the object.
+    */
+
+  def toStringIndented(indent: Int): String = {
+    var result = ""
+    val tab = "  "
+    val space = tab * indent
+    result += s"$space$monitorName : $errorCount"
+    for (errorStatus <- errorStatusOfSubMonitors) {
+      result += "\n"
+      result += errorStatus.toStringIndented(indent + 2)
+    }
+    for (errorStatus <- errorStatusOfAbstractMonitors) {
+      result += "\n"
+      result += (tab * (indent + 2)) + "abstract\n"
+      result += errorStatus.toStringIndented(indent + 2)
+    }
+    result
+  }
+}
+
+/**
+  * Reports of various errors and successes are case classes extending this class.
+  */
+
+trait Report
+
+// ### TODO
+
+case class TransitionReport(
+                             monitor: String,
+                             state: String,
+                             eventNr: Long,
+                             event: String,
+                             instance: Int | String,
+                           ) extends Report {
+
+}
+
+// ###
+
+/**
+  * Represents a transition error, which a transition leading to an `error` state.
+  *
+  * @param monitor the monitor it occurred in.
+  * @param state the state it occurred in.
+  * @param eventNr the number of the event in the input stream.
+  * @param event the event causing the error.
+  * @param instance instance as pointed out by user.
+  * @param trace the error trace.
+  * @param msg an optional user message.
+  */
+
+case class TransitionErrorReport(
+                            monitor: String,
+                            state: String,
+                            eventNr: Long,
+                            event: String,
+                            instance: Int | String,
+                            trace: List[TraceEvent],
+                            msg: Option[String]
+                          ) extends Report {
+  override def toString: String = {
+    val headline = s"*** DAUT TRANSITION ERROR in state $monitor.$state"
+    val separator = "-" * headline.length
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    msg match {
+      case None =>
+      case Some(txt) =>
+        message += s"$txt\n"
+    }
+    message += s"Event number $eventNr: $event\n"
+    message += s"${formatTrace(trace)}\n"
+    message += s"$separator\n"
+    message
+  }
+}
+
+/**
+  * Represents a transition ok, which a transition leading to an `ok` state.
+  *
+  * @param monitor  the monitor it occurred in.
+  * @param state    the state it occurred in.
+  * @param eventNr  the number of the event in the input stream.
+  * @param event    the event causing leading to ok.
+  * @param instance instance as pointed out by user.
+  * @param trace    the trace.
+  * @param msg      an optional user message.
+  */
+
+case class TransitionOkReport(
+                         monitor: String,
+                         state: String,
+                         eventNr: Long,
+                         event: String,
+                         instance: Int | String,
+                         trace: List[TraceEvent],
+                         msg: Option[String]
+                       ) extends Report {
+  override def toString: String = {
+    val headline = s"!!! DAUT TRANSITION OK in state $monitor.$state"
+    val separator = "+" * headline.length
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    msg match {
+      case None =>
+      case Some(txt) =>
+        message += s"$txt\n"
+    }
+    message += s"Event number $eventNr: $event\n"
+    message += s"${formatTrace(trace)}\n"
+    message += s"$separator\n"
+    message
+  }
+}
+
+/**
+  * Represents an error occurring due to a call of the `end()` method in a `hot`
+  * or `next` state.
+  *
+  * @param monitor the monitor it occurred in.
+  * @param state the state it occurred in.
+  * @param instance instance as pointed out by user.
+  * @param trace the error trace.
+  */
+
+case class OmissionErrorReport(
+                           monitor: String,
+                           state: String,
+                           instance: Int | String,
+                           trace: List[TraceEvent]
+                         ) extends Report {
+  override def toString: String = {
+    val headline = s"*** DAUT OMISSION ERROR in state $monitor.$state"
+    val separator = "-" * headline.length
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    message += s"${formatTrace(trace)}\n"
+    message += s"$separator\n"
+    message
+  }
+}
+
+/**
+  * Represents an error reported by a user explicitly.
+  *
+  * @param monitor the monitor it occurred in.
+  * @param msg a user message.
+  */
+
+case class UserErrorReport(
+                            monitor: String,
+                            msg: String
+                          ) extends Report {
+  override def toString: String = {
+    val headline = s"*** DAUT USER ERROR REPORT $monitor"
+    val separator = "-" * headline.length
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    message += s"$msg\n"
+    message += s"$separator\n"
+    message
+  }
+}
+
+/**
+  * Represents a user information report. This is not an error.
+  *
+  * @param monitor the monitor it is reported from.
+  * @param msg a user message.
+  */
+
+case class UserReport(
+                       monitor: String,
+                       msg: String
+                     ) extends Report {
+  override def toString: String = {
+    val headline = s"<info> DAUT USER REPORT $monitor"
+    val separator = "." * headline.length
+    var message = ""
+    message += s"$separator\n"
+    message += s"$headline\n"
+    message += s"$separator\n"
+    message += s"$msg\n"
+    message += s"$separator\n"
+    message
+  }
+}
+
+/**
+  * Used to record an event that causes a monitor state to trigger a transition.
+  * Each state contains a list of trace events that lead to that state.
+  * Is printed out when an error, or ok if `DautOptions.RECORD_OK == true`, is detected,
+  * or in debug mode: `DautOptions.DEBUG == true`.
+  *
+  * @param st      : the source state of the transition.
+  * @param eventNr number of event.
+  * @param event   the event.
+  */
+
+case class TraceEvent(st: String, eventNr: Long, event: String) {
+  override def toString: String = s"State: $st, EventNr: $eventNr, Event: $event"
+}
+
+/**
+  * Formats a trace associated with a state.
+  *
+  * @param trace  the trace to print.
+  * @param indent number of spaces to indent (depends on context).
+  * @return the formatted trace.
+  */
+
+def formatTrace(trace: List[TraceEvent], indent: Int = 0): String = {
+  val indentation = " " * indent
+  var message = indentation + "Trace:"
+  for (event <- trace.reverse) {
+    message += "\n" + indentation + s"  $event"
+  }
+  message
+}
+
+/**
   * Any monitor must sub-class this class. It provides all the DSL constructs for writing
   * a monitor.
   *
@@ -118,21 +379,6 @@ case class MonitorError() extends RuntimeException
 
 class Monitor[E] {
   thisMonitor =>
-
-  /**
-    * Used to record an event that causes a monitor state to trigger a transition.
-    * Each state contains a list of trace events that lead to that state.
-    * Is printed out when an error, or ok if `DautOptions.RECORD_OK == true`, is detected,
-    * or in debug mode: `DautOptions.DEBUG == true`.
-    *
-    * @param st: the source state of the transition.
-    * @param eventNr number of event.
-    * @param event   the event.
-    */
-
-  case class TraceEvent(st: String, eventNr: Long, event: String) {
-    override def toString(): String = s"State: $st, EventNr: $eventNr, Event: $event"
-  }
 
   /**
     * This class represents all the active states in a monitor (excluding those of its sub-monitors).
@@ -384,18 +630,6 @@ class Monitor[E] {
 
   private var endCalled: Boolean = false
 
-  // ### TODO
-
-  /**
-    * Set to true when a summary of this monitor has been printed.
-    * It is needed due to abstract monitors. An abstract monitor
-    * can be referenced from more than one other monitor.
-    */
-
-  var summaryPrinted: Boolean = false
-
-  // ###
-
   /**
     * Number of violation of the specification encountered.
     */
@@ -403,27 +637,28 @@ class Monitor[E] {
   private var errorCount = 0
 
   /**
-    * Number of event currently verified. First event gets number 1.
+    * Various error and ok reports generated during monitoring.
     */
 
-  var eventNumber: Long = 0
+  private var reports: List[Report] =  List()
 
   /**
-    * Messages recorded by calls of the `record` method.
+    * Reports a message. This is not considered an error by Daut, meaning that it
+    * does not increase the error count.
+    *
+    * @param message the message to be reported.
     */
 
-  private var recordings: List[String] = List()
+  def report(message: String): Unit = {
+    val report = UserReport(monitorName, message)
+    reports = reports :+ report
+  }
 
   /**
     * Option, which when set to true will cause monitoring to stop the first time
     * a specification violation is encountered. Otherwise monitoring will continue.
     * Default value is false.
     */
-
-  def record(message: String): Unit = {
-    // recordings = recordings :+ s"Recording in monitor [${monitorName}]\n$message"
-    recordings = recordings :+ message
-  }
 
   var STOP_ON_ERROR: Boolean = false
 
@@ -483,6 +718,7 @@ class Monitor[E] {
 
   def monitorAbstraction[E](monitor: Monitor[E]): Monitor[E] = {
     abstractMonitors = abstractMonitors :+ monitor
+    monitor.monitorAtTop = false
     monitor
   }
 
@@ -873,14 +1109,14 @@ class Monitor[E] {
     def apply(event: E): Option[Set[state]] =
       if (transitions.isDefinedAt(event)) {
         val newStates = transitions(event)
-        val newTrace = TraceEvent(this.toStringState, eventNumber, event.toString) :: trace
+        val newTrace = TraceEvent(this.toStringState, Monitor.eventNumber, event.toString) :: trace
         for (ns <- newStates) {
           ns match {
             case `stay` =>
-            case `error` => reportErrorOnEvent(this, event, newTrace, error.message)
+            case `error` => reportTransitionError(this, event, newTrace, error.message)
             case `ok` =>
               if (DautOptions.RECORD_OK) {
-                reportSuccessOnEvent(this, event, newTrace, ok.message)
+                reportTransitionOk(this, event, newTrace, ok.message)
               }
             case ns =>
               if (!ns.isInitial) {
@@ -1593,11 +1829,11 @@ class Monitor[E] {
   def verify(event: E, eventNr: Long = 0): this.type = {
     if (monitorAtTop) {
       Monitor.transitionsTriggered = false
-    }
-    if (eventNr > 0) {
-      eventNumber = eventNr
-    } else {
-      eventNumber += 1
+      if (eventNr > 0) {
+        Monitor.eventNumber = eventNr
+      } else {
+        Monitor.eventNumber += 1
+      }
     }
     if (initializing) initializing = false
     verifyBeforeEvent(event)
@@ -1631,13 +1867,13 @@ class Monitor[E] {
       val hotStates = theEndStates filter (!_.isFinal)
       if (hotStates.nonEmpty) {
         val headline = s"*** Daut omission errors for $monitorName"
-        val separator = "=" * headline.size
+        val separator = "=" * headline.length
         println()
         println(separator)
         println(headline)
         println(separator)
         for (hotState <- hotStates) {
-          reportErrorAtEnd(hotState, hotState.trace)
+          reportOmissionError(hotState, hotState.trace)
         }
       }
       for (monitor <- monitors) {
@@ -1651,23 +1887,52 @@ class Monitor[E] {
     }
     if (monitorAtTop) {
       printSummary()
+      writeReportToJson() // TODO
     }
     this
   }
 
-  // ### TODO
+  /**
+    * Returns the error status for the monitor.
+    *
+    * @return the error status for the monitor.
+    */
+
+  def getErrorStatus: ErrorStatus = {
+    val errorStatusOfSubMonitors: List[ErrorStatus] = monitors.map(_.getErrorStatus)
+    val errorStatusOfAbstractMonitors: List[ErrorStatus] = abstractMonitors.map(_.getErrorStatus)
+    ErrorStatus(monitorName, errorCount, errorStatusOfSubMonitors, errorStatusOfAbstractMonitors)
+  }
+
+  /**
+    * prints the error summary for the monitor after `end()` has been called.
+    * The error status includes all results for the monitor as well as for
+    * sub monitors, and abstract monitors they refer to.
+    */
 
   private def printSummary(): Unit = {
-    if (!summaryPrinted) {
-      if (monitorAtTop) {
-        println(s"Summary of top monitor $monitorName:")
-      }
-      println(f"${thisMonitor.monitorName}%-20s: $getErrorCount")
-      summaryPrinted = true
-      for (monitor <- monitors ++ abstractMonitors) {
-        monitor.printSummary()
+    if (DautOptions.PRINT_ERRORS_AT_END) {
+      println()
+      println("========================")
+      println("Summary of Daut Reports:")
+      println("========================")
+      println()
+      for (report <- getReports) {
+        println(report)
       }
     }
+    println()
+    println("==============================")
+    println("Daut Error Status per Monitor:")
+    println("==============================")
+    println(getErrorStatus)
+    println("-------------------------")
+  }
+
+  // ### TODO
+
+  def writeReportToJson(): Unit = {
+
   }
 
   // ###
@@ -1743,7 +2008,7 @@ class Monitor[E] {
     println("[memory] ")
     for (s <- states.getMainStates) {
       println(s"  ${s.toStringState}")
-      if (DautOptions.DEBUG_TRACES && !s.trace.isEmpty) {
+      if (DautOptions.DEBUG_TRACES && s.trace.nonEmpty) {
         println(formatTrace(s.trace, 4))
       }
     }
@@ -1752,7 +2017,7 @@ class Monitor[E] {
       println(s"[index=$index]")
       for (s <- states.getIndexedSet(index)) {
         println(s"  $s")
-        if (DautOptions.DEBUG_TRACES && !s.trace.isEmpty) {
+        if (DautOptions.DEBUG_TRACES && s.trace.nonEmpty) {
           println(formatTrace(s.trace, 4))
         }
       }
@@ -1762,39 +2027,21 @@ class Monitor[E] {
   }
 
   /**
-    * Returns all recordings for this monitor and all of its sub monitors.
+    * Returns all reports for this monitor and all of its sub monitors.
     *
-    * @return the recordings.
+    * @return the reports.
     */
 
-  def getRecordings(): List[String] = {
-    var allRecordings: List[String] = recordings
+  def getReports: List[Report] = {
+    var allReports: List[Report] = reports
     for (monitor <- monitors) {
-      allRecordings = allRecordings ++ monitor.getRecordings()
+      allReports = allReports ++ monitor.getReports
     }
-    allRecordings
+    allReports
   }
 
   /**
-    * Formats a trace associated with a state.
-    *
-    * @param trace  the trace to print.
-    * @param indent number of spaces to indent (depends on context).
-    * @return the formatted trace.
-    */
-
-  def formatTrace(trace: List[TraceEvent], indent: Int = 0): String = {
-    val indentation = " " * indent
-    var message = indentation + "Trace:"
-    for (event <- trace.reverse) {
-      message += "\n" + indentation + s"  $event"
-    }
-    message
-  }
-
-  /**
-    * Prints error message, triggering event, and trace,
-    * and then calls `reportError()`.
+    * Reports a transition error.
     *
     * @param st    the state in which the error occurred.
     * @param event the triggering event causing the error.
@@ -1803,53 +2050,45 @@ class Monitor[E] {
     * @param msg   a user provided optional message.
     */
 
-  protected def reportErrorOnEvent(st: state, event: E, trace: List[TraceEvent], msg : Option[String]): Unit = {
-    val headline = s"*** DAUT TRANSITION ERROR in state $monitorName.${st.toStringState}"
-    val separator = "-" * headline.size
-    var message = ""
-    message += s"$separator\n"
-    message += s"$headline\n"
-    message += s"$separator\n"
-    msg match {
-      case None =>
-      case Some(txt) =>
-        message += s"$txt\n"
-    }
-    message += s"Event number $eventNumber: $event\n"
-    message += s"${formatTrace(trace)}\n"
-    message += s"$separator\n"
-    reportError(message)
+  protected def reportTransitionError(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
+    val report = TransitionErrorReport(monitorName, st.toStringState, Monitor.eventNumber, event.toString, 42, trace, msg)
+    createErrorReport(report)
   }
 
   /**
-    * Prints end of trace error message, prints the trace leading to the error,
-    * and then calls `reportError()`.
+    * Reports an omission error, when `end()` is called in a `hot` or `next` state.
     *
-    * @param st    the violating hot state at the end of the trace.
+    * @param st    the violating hot or next state at the end of the trace.
     * @param trace the trace leading to the error. Includes only events that
     *              triggered transitions leading to this state.
     */
 
-  protected def reportErrorAtEnd(st: state, trace: List[TraceEvent]): Unit = {
-    val headline = s"*** DAUT OMISSION ERROR in state $monitorName.${st.toStringState}"
-    val separator = "-" * headline.size
-    var message = ""
-    message += s"$separator\n"
-    message += s"$headline\n"
-    message += s"$separator\n"
-    message += s"${formatTrace(trace)}\n"
-    message += s"$separator\n"
-    reportError(message)
+  protected def reportOmissionError(st: state, trace: List[TraceEvent]): Unit = {
+    val report = OmissionErrorReport(monitorName, st.toStringState, 42, trace)
+    createErrorReport(report)
   }
 
   /**
-    * Reports a detected error.
+    * Reports an error, called by the user.
     *
-    * @param e text string explaining the error. This will be printed as part of the
+    * @param message text string explaining the error. This will be printed as part of the
     *          error message.
     */
 
   protected def reportError(message: String): Unit = {
+    val report = UserErrorReport(monitorName, message)
+    createErrorReport(report)
+  }
+
+  /**
+    * Creates an error report by counting up the error count, recording the report,
+    * calling the `callback()` method, and potentially stops monitoring
+    * if `STOP_ON_ERROR` is true.
+    *
+    * @param report the error report.
+    */
+
+  protected def createErrorReport(report: Report): Unit = {
     if (DautOptions.PRINT_ERROR_BANNER) {
       println(
         s"""
@@ -1862,10 +2101,9 @@ class Monitor[E] {
            |
         """.stripMargin)
     }
-    println(s"\n$message")
-    record(message)
+    println(s"\n$report")
+    reports = reports :+ report
     errorCount += 1
-    // println(s"$monitorName error # $errorCount")
     callBack()
     if (STOP_ON_ERROR) {
       println("\n*** terminating on first error!\n")
@@ -1874,8 +2112,7 @@ class Monitor[E] {
   }
 
   /**
-    * Prints message, triggering event, and trace,
-    * when a monitor state succeeds (leads to `ok`).
+    * Reports a transition leading to `ok`.
     *
     * @param st    the state in which the success occurred.
     * @param event the triggering event causing the success.
@@ -1884,24 +2121,12 @@ class Monitor[E] {
     * @param msg   a user provided optional message.
     */
 
-  protected def reportSuccessOnEvent(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
-    val headline = s"!!! DAUT TRANSITION OK in state $monitorName.${st.toStringState}"
-    val separator = "+" * headline.size
-    var message = ""
-    message += s"$separator\n"
-    message += s"$headline\n"
-    message += s"$separator\n"
-    msg match {
-      case None =>
-      case Some(txt) =>
-        message += s"$txt\n"
-    }
-    message += s"Event number $eventNumber: $event\n"
-    message += s"${formatTrace(trace)}\n"
-    message += s"$separator\n"
-    println(s"\n$message")
-    record(message)
+  protected def reportTransitionOk(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
+    val report = TransitionOkReport(monitorName, st.toStringState, Monitor.eventNumber, event.toString, 42, trace, msg)
+    println(s"\n$report")
+    reports = reports :+ report
   }
+
 }
 
 /**
@@ -2001,6 +2226,12 @@ object Monitor {
   private val eventColoring: Coloring = Coloring()
 
   /**
+    * Number of event currently verified. First event gets number 1.
+    */
+
+  var eventNumber: Long = 0
+
+  /**
     * Set to true when an incoming event triggers a transition in
     * a (sub) monitor. Is used to control whether to print out statys
     * of (sub) monitors in DEBUG mode. It is set to false at the beginning
@@ -2048,6 +2279,22 @@ object Monitor {
       }
     }
   }
+
+  // ### TODO
+
+  def logTransitionNew(obj: Any): Unit = {
+    if (isWriterInitialized) {
+      val json = jsonEncoder(obj)
+      json match {
+        case None =>
+        case Some(string) =>
+          jsonWriter.println(string)
+          jsonWriter.flush()
+      }
+    }
+  }
+
+  // ###
 
   /**
     * Closes the previously opened `.jsonl` file.

@@ -119,7 +119,7 @@ object VerifyLog {
     DautOptions.DEBUG = false
     Util.time ("Analysis of log") {
       while (csvFile.hasNext) {
-        if (monitor.eventNumber % 1000 == 0) println(s"---> ${monitor.eventNumber}")
+        if (Monitor.eventNumber % 1000 == 0) println(s"---> ${Monitor.eventNumber}")
         monitor.verify(csvFile.next)
       }
       monitor.end()

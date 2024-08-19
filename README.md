@@ -1341,7 +1341,10 @@ monitor step to be printed, including event and resulting set of states. Default
 
 - `DautOptions.SHOW_TRANSITIONS` (static variable): when set to true, events that trigger transitions are shown. Default is false.
 
+- `DautOptions.PRINT_ERRORS_AT_END`: when set to true, all error and ok messages are repeated at the end when the `end()` menthod is called. Default value is true. This can be useful if Daut messages have been merged with other output from the system under observation.
+
 - `Monitor.STOP_ON_ERROR`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
+
 
 
 These options can be set as shown in the following example:
@@ -1354,7 +1357,7 @@ m.STOP_ON_ERROR = true
 ...
 ```
 
-#### Labeling of Anonymous States for Debugging Purposes
+## Labeling of Anonymous States for Debugging Purposes
 
 When debugging a monitor with the `DautOptions.DEBUG` flag set to true, states will be printed on standard out. For anonymous states we will only get printed what kind of state it is (`always`, `hot`, ...). We can added information to be printed with the `label` function, for example as follows:
 
@@ -1633,19 +1636,55 @@ Ending Daut trace evaluation for CorrectLock
 The `Monitor` class provides a collection of methods which can help viewing the results of a run. 
 These are explained in the following
 
-#### Recording Messages
+#### Reporting Messages
 
-The following method allows to add arbitrary text messages as recordings in a monitor:
-
-```scala
-def record(message: String): Unit
-```
-
-At any point in time, the current recordings (including error messages) of a monitor, and all its submonitors, can be extracted with the method:
+The following method allows to add arbitrary text messages as reports in a monitor:
 
 ```scala
-def getRecordings(): List[String]
+def report(message: String): Unit
 ```
+
+These are not considered as errors.
+
+At any point in time, the current reports (including error messages) of a monitor, and all its submonitors, can be extracted with the method:
+
+```scala
+def getReports: List[Report]
+```
+
+Here `Report` is a super type (trait) with the following subtype:
+
+```scala
+trait Report
+case class TransitionErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: Int | String, trace: List[TraceEvent], msg: Option[String]) extends Report
+case class TransitionOkReport(monitor: String, state: String, eventNr: Long, event: String, instance: Int | String, trace: List[TraceEvent], msg: Option[String]) extends Report 
+case class OmissionErrorReport(monitor: String, state: String, instance: Int | String, trace: List[TraceEvent]) extends Report
+case class UserErrorReport(monitor: String, msg: String ) extends Report
+case class UserReport(monitor: String, msg: String) extends Report
+```
+
+#### Get Result Summary
+
+The following method returns a summary of the result of monitoring::
+
+```scala
+def getErrorStatus(): ErrorStatus
+```
+
+The `ErrorStatus` class is defined as follows:
+
+```scala
+case class ErrorStatus(
+             monitorName: String,
+             errorCount: Int,
+             errorStatusOfSubMonitors: List[ErrorStatus],
+             errorStatusOfAbstractMonitors: List[ErrorStatus]) 
+```
+
+It contains the name of the monitor, the number of errors, and similar results for
+all sub monitors as well as all abstract monitors connected to via calls of
+the `monitorAbstraction` method. Note that the `errorCount` of a monitor does not include
+the errors of the sub monitors/abstract monitors.
 
 #### Printing Monitor States
 
