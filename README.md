@@ -1,6 +1,6 @@
 # Daut
 
-Version 2.0
+Version 2.1
 
 Daut is programmed in [Scala](https://www.scala-lang.org).
 
@@ -2013,13 +2013,14 @@ The `ErrorStatus` class is defined as follows:
 case class ErrorStatus(
              monitorName: String,
              errorCount: Int,
+             errorCountSum: Int,
              errorStatusOfSubMonitors: List[ErrorStatus],
              errorStatusOfAbstractMonitors: List[ErrorStatus]) 
 ```
 
-It contains the name of the monitor, the number of errors, and similar results for
+It contains the name of the monitor, the number of errors for the monitor, and the sum of of errors including also sub monitors, and similar results for
 all sub monitors as well as all abstract monitors connected to via calls of
-the `monitorAbstraction` method. Note that the `errorCount` of a monitor does not include the errors of the sub monitors/abstract monitors.
+the `monitorAbstraction` method. 
 
 The following method returns a flat map from monitor names to the error count:
 

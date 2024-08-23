@@ -130,6 +130,7 @@ case class MonitorError() extends RuntimeException
   *
   * @param monitorName                   : the name of the monitor.
   * @param errorCount                    : the number of errors detected, not including sub monitor errors.
+  * @param errorCountSum                 : the number of errors detected, including sub monitor errors.
   * @param errorStatusOfSubMonitors      : the list of error status for sub monitors.
   * @param errorStatusOfAbstractMonitors : the list of error statys for abstract monitors.
   */
@@ -137,6 +138,7 @@ case class MonitorError() extends RuntimeException
 case class ErrorStatus(
                         monitorName: String,
                         errorCount: Int,
+                        errorCountSum: Int,
                         errorStatusOfSubMonitors: List[ErrorStatus],
                         errorStatusOfAbstractMonitors: List[ErrorStatus]) {
   override def toString: String = {
@@ -155,6 +157,9 @@ case class ErrorStatus(
     val tab = "  "
     val space = tab * indent
     result += s"$space$monitorName : $errorCount"
+    if (errorStatusOfSubMonitors.nonEmpty) {
+      result += s", sum = $errorCountSum"
+    }
     for (errorStatus <- errorStatusOfSubMonitors) {
       result += "\n"
       result += errorStatus.toStringIndented(indent + 2)
@@ -2006,10 +2011,8 @@ class Monitor[E] {
   def getErrorStatus: ErrorStatus = {
     val errorStatusOfSubMonitors: List[ErrorStatus] = monitors.map(_.getErrorStatus)
     val errorStatusOfAbstractMonitors: List[ErrorStatus] = abstractMonitors.map(_.getErrorStatus)
-    ErrorStatus(monitorName, getErrorCount, errorStatusOfSubMonitors, errorStatusOfAbstractMonitors)
+    ErrorStatus(monitorName, errorCount, getErrorCount, errorStatusOfSubMonitors, errorStatusOfAbstractMonitors)
   }
-
-  // ### TODO
 
   /**
     * Returns the error count for the monitor and all its sub monitors and abstract
@@ -2025,8 +2028,6 @@ class Monitor[E] {
     }
     result
   }
-
-  // ###
 
   /**
     * prints the error summary for the monitor after `end()` has been called.
