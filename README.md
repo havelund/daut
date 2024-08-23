@@ -1685,7 +1685,7 @@ This section describes various ways of observing the results of a monitor.
 
 We shall first introduce an example. The following requirements must be satisfied.
 
-######Requirement:
+###### Requirement:
 
 Commands and identified by a task id and a command number.
 Commands are dispatched for execution on a processor, replied to (acknowledgement of dispatch received), and completed. 
