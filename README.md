@@ -108,10 +108,10 @@ class AcquireRelease extends Monitor[LockEvent] {
 
 object Main {
   def main(args: Array[String]) {
-    DautOptions.DEBUG = true
     val m = new AcquireRelease
     m.verify(acquire(1, 10))
-    m.verify(release(1, 10))
+    m.verify(acquire(2, 20))
+    m.verify(acquire(3, 20))
     m.end()
   }
 }
@@ -134,26 +134,46 @@ scala -cp .:$DAUT daut1_temporal.Main
 This should generate the output:
 
 ```
-===[acquire(1,10)]===
+========================
+Summary of Daut Reports:
+========================
 
---- AcquireRelease:
-[memory] 
-  hot
-  always
+-----------------------------------------------------
+*** DAUT TRANSITION ERROR in state AcquireRelease.hot
+-----------------------------------------------------
+Event number 3: acquire(3,20)
+Trace:
+  State: always, EventNr: 2, Event: acquire(2,20)
+  State: hot, EventNr: 3, Event: acquire(3,20)
+-----------------------------------------------------
+
+---------------------------------------------------
+*** DAUT OMISSION ERROR in state AcquireRelease.hot
+---------------------------------------------------
+Trace:
+  State: always, EventNr: 1, Event: acquire(1,10)
+---------------------------------------------------
+
+---------------------------------------------------
+*** DAUT OMISSION ERROR in state AcquireRelease.hot
+---------------------------------------------------
+Trace:
+  State: always, EventNr: 3, Event: acquire(3,20)
+---------------------------------------------------
 
 
-
-===[release(1,10)]===
-
---- AcquireRelease:
-[memory] 
-  always
-
-
-Ending Daut trace evaluation for AcquireRelease
+==============================
+Daut Error Status per Monitor:
+==============================
+AcquireRelease : 3
+-------------------------
 ``` 
  
-Some debugging information and no errors detected. The trace satisfies the specification.
+Three errors are detectded and reported:
+
+- Task 3 acquires lock 20 when task 2 has it.
+- Task 1 does not release lock 10.
+- Task 3 does not release lock 20 (assuming it got it).
   
 Note: in Scala you indicate an "object" to run, in this case the object named `Main`. It must contain a `main` method. There can be
 several such objects in a file, `Main1`, `Main2`, each containing
@@ -1327,23 +1347,24 @@ object Main {
 
 Daut offers three option variables that can be set:
 
-- `DautOptions.DEBUG` (static variable): when set to true, causes each 
+- `DautOptions.DEBUG: Boolean` (static variable): when set to true, causes each 
 monitor step to be printed, including event and resulting set of states. Default is false.
 
-- `DautOptions.DEBUG_ALL_EVENTS` (static variable): when set to true and `DEBUG` is true, causes all events to be reported. If false, only events triggering transitions are shown. Default is false.
+- `DautOptions.DEBUG_ALL_EVENTS: Boolean` (static variable): when set to true and `DEBUG` is true, causes all events to be reported. If false, only events triggering transitions are shown. Default is false.
 
-- `DautOptions.DEBUG_TRACES` (static variable): when set to true and `DEBUG` is true, causes the trace that lead to a state be printed as part of the state. Default is true.
+- `DautOptions.DEBUG_TRACES: Boolean` (static variable): when set to true and `DEBUG` is true, causes the trace that lead to a state be printed as part of the state. Default is true.
 
-- `DautOptions.PRINT_ERROR_BANNER` (static variable): when set to true, when an error occurs, a very big ERROR BANNNER is printed (to make it visible    amongst plenty of output). Default is false.
+- `DautOptions.PRINT_ERROR_BANNER: Boolean` (static variable): when set to true, when an error occurs, a very big ERROR BANNNER is printed (to make it visible    amongst plenty of output). Default is false.
 
-- `DautOptions.RECORD_OK` (static variable): when set to true, every `ok` 
-(success) reached will be reported. Default is false.
+- `DautOptions.REPORT_OK_TRANSITIONS: Boolean` (static variable): when set to true, every transition leading to `ok` (success) will be reported. Default is false. Transitions will be printed out in color with different colors chosen for different monitors (in a circular manner since the number of colors is limited).
 
-- `DautOptions.SHOW_TRANSITIONS` (static variable): when set to true, events that trigger transitions are shown. Default is false.
+- `DautOptions.SHOW_TRANSITIONS: Boolean` (static variable): when set to true, events that trigger transitions are shown. Default is false.
 
-- `DautOptions.PRINT_ERRORS_AT_END`: when set to true, all error and ok messages are repeated at the end when the `end()` menthod is called. Default value is true. This can be useful if Daut messages have been merged with other output from the system under observation.
+- `DautOptions.PRINT_ERRORS_AT_END: Boolean`: when set to true, all error and ok messages are repeated at the end when the `end()` menthod is called. Default value is true. This can be useful if Daut messages have been merged with other output from the system under observation.
 
-- `Monitor.STOP_ON_ERROR`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
+- `DautOptions.RESULT_FILE: String`: the name of the json file into which the result of a monitoring session will be written when the `end()` method is called. The default value is `daut-results.json`.
+
+- `Monitor.STOP_ON_ERROR: Boolean`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
 
 
 
@@ -1631,20 +1652,335 @@ CorrectLock error # 1
 Ending Daut trace evaluation for CorrectLock
 ```
 
-## Other Helper Functions
+#### Printing Monitor States
 
-The `Monitor` class provides a collection of methods which can help viewing the results of a run. 
-These are explained in the following
-
-#### Reporting Messages
-
-The following method allows to add arbitrary text messages as reports in a monitor:
+The following method prints the internal memory of a monitor and can be called at any time during monitoring:
 
 ```scala
+def printStates(): Unit
+```
+
+If `DautOptions.DEBUG` is true, this method is automatically called after each event has been processed.
+
+## Methods for Creating Reports During Monitoring
+
+Errors are usually reported by Daut when reaching an `error` state or when ending
+in a `hot` or `next` state. In addition, the following methods allow to report errors or just information during monitoring:
+
+```scala
+def reportError(message: String): Unit
 def report(message: String): Unit
 ```
 
-These are not considered as errors.
+The method `reportError` reports an error (with a message), causing the error
+count to be incremented by 1. The method `report` just reports some information,
+which is not considered an error.
+
+
+## Getting Access to Results
+
+This section describes various ways of observing the results of a monitor.
+
+#### Example
+
+We shall first introduce an example. The following requirements must be satisfied.
+
+######Requirement:
+
+Commands and identified by a task id and a command number.
+Commands are dispatched for execution on a processor, replied to (acknowledgement of dispatch received), and completed. 
+
+   - **Dispatch**
+      * **Monotonic**
+        Command numbers must increase by 1 for each dispatch.
+      * **DispatchReplyComplete**
+        When a command is dispatched by a task, it must be replied to
+        without a dispatch in between, and this must be followed
+        by a completion.
+   2. **Completion**
+      * A command number can not complete more than once.
+
+The following monitor implements this requirements. It could be made less verbose by combining monitors, but the objective here is to illustrate result generation and for that we need several monitors, including sub monitors.
+
+We first define a super monitor `CommandMonitor` which overrides the method
+`instanceOf`, which for each event identifies what is called the instance id.
+Instance ids are useful for understanding output to identify what instance of an event sequence is being monitored by a certain state of the monitor. Technically the `keyOf` function which can be overridden by the user identifies such instance ids. However, `keyOf` is used for optimizing the monitoring using indexes. In our case here we just want to identify such keys for structuring the results of monitoring so that they are easier to comprehend. In our example we want to use the command number as the instance id for a monitor. 
+
+```scala
+sealed trait Event
+case class DispatchRequest(taskId: Int, cmdNum: Int) extends Event
+case class DispatchReply(taskId: Int, cmdNum: Int) extends Event
+case class CommandCompleted(taskId: Int, cmdNum: Int) extends Event
+
+class CommandMonitor extends Monitor[Event] {
+  override def instanceOf(event: Event): Option[Any] = {
+    event match {
+      case DispatchRequest(_, cmdNum) => Some(cmdNum)
+      case DispatchReply(_, cmdNum) => Some(cmdNum)
+      case CommandCompleted(_, cmdNum) => Some(cmdNum)
+    }
+  }
+}
+
+class MonotonicMonitor extends CommandMonitor {
+  always {
+    case DispatchRequest(_, cmdNum1) =>
+      watch(s"$cmdNum1 seen, next should be ${cmdNum1 + 1}") {
+        case DispatchRequest(_, cmdNum2) =>
+          ensure(cmdNum2 == cmdNum1 + 1)
+      }
+  }
+}
+
+class DispatchReplyCompleteMonitor extends CommandMonitor {
+  always {
+    case DispatchRequest(taskId, cmdNum) =>
+      hot(s"reply to $cmdNum") {
+        case DispatchRequest(`taskId`, `cmdNum`) => error
+        case DispatchReply(`taskId`, `cmdNum`) =>
+          hot(s"complete $cmdNum") {
+            case CommandCompleted(`taskId`, `cmdNum`) => ok
+          }
+      }
+  }
+}
+
+class DispatchMonitor extends CommandMonitor {
+  monitor(MonotonicMonitor(), DispatchReplyCompleteMonitor())
+}
+
+class CompletionMonitor extends CommandMonitor {
+  always {
+    case CommandCompleted(_, cmdNum) => NoMoreCompletions(cmdNum)
+  }
+
+  case class NoMoreCompletions(cmdNum: Int) extends state {
+    watch {
+      case CommandCompleted(_, `cmdNum`) => error
+    }
+  }
+}
+
+class Monitors extends CommandMonitor {
+  monitor(
+    DispatchMonitor(),
+    CompletionMonitor()
+  )
+}
+```
+
+#### Running the Example
+
+If we apply this monitor as follows:
+
+```scala
+object Main {
+  def main(args: Array[String]): Unit = {
+    val trace: List[Event] = List(
+      DispatchRequest(1, 1),
+      DispatchRequest(1, 1),
+      DispatchReply(1, 1),
+      CommandCompleted(1, 1),
+      DispatchRequest(1, 3),
+      DispatchReply(1, 3)
+    )
+    val monitor = new Monitors
+    monitor(trace)
+  }
+}
+```
+
+The following output is generated (here only showing the summary at the end of monitoring):
+
+```
+========================
+Summary of Daut Reports:
+========================
+
+-----------------------------------------------------------------------------------
+*** DAUT TRANSITION ERROR in state MonotonicMonitor.watch(1 seen, next should be 2)
+-----------------------------------------------------------------------------------
+Event number 2: DispatchRequest(1,1)
+Trace:
+  State: always, EventNr: 1, Event: DispatchRequest(1,1)
+  State: watch(1 seen, next should be 2), EventNr: 2, Event: DispatchRequest(1,1)
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+*** DAUT TRANSITION ERROR in state MonotonicMonitor.watch(1 seen, next should be 2)
+-----------------------------------------------------------------------------------
+Event number 5: DispatchRequest(1,3)
+Trace:
+  State: always, EventNr: 2, Event: DispatchRequest(1,1)
+  State: watch(1 seen, next should be 2), EventNr: 5, Event: DispatchRequest(1,3)
+-----------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+*** DAUT TRANSITION ERROR in state DispatchReplyCompleteMonitor.hot(reply to 1)
+-------------------------------------------------------------------------------
+Event number 2: DispatchRequest(1,1)
+Trace:
+  State: always, EventNr: 1, Event: DispatchRequest(1,1)
+  State: hot(reply to 1), EventNr: 2, Event: DispatchRequest(1,1)
+-------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+*** DAUT OMISSION ERROR in state DispatchReplyCompleteMonitor.hot(complete 3)
+-----------------------------------------------------------------------------
+Trace:
+  State: always, EventNr: 5, Event: DispatchRequest(1,3)
+  State: hot(reply to 3), EventNr: 6, Event: DispatchReply(1,3)
+-----------------------------------------------------------------------------
+
+
+==============================
+Daut Error Status per Monitor:
+==============================
+Monitors : 4
+    DispatchMonitor : 4
+        MonotonicMonitor : 2
+        DispatchReplyCompleteMonitor : 2
+    CompletionMonitor : 0
+-------------------------
+```
+
+The reader can try and understand why these error reports are generated.
+
+Note that the error count for a super monitor includes the counts for the 
+sub monitors recursively.
+
+In addition a JSON file is generated, written to the JSON file indicated by the `DautOptions.RESULT_FILE`, which has the optional value `daut-results.json`. 
+A snippet of this JSON file is shown below.
+
+
+```json
+{
+  "CompletionMonitor": {},
+  "DispatchMonitor": {},
+  "DispatchReplyCompleteMonitor": {
+    "1": [
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "DispatchReplyCompleteMonitor",
+        "state": "hot(reply to 1)",
+        "eventNr": 2,
+        "event": "DispatchRequest(1,1)",
+        "instance": "1",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 1,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "st": "hot(reply to 1)",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          }
+        ],
+        "msg": []
+      }
+    ],
+    "3": [
+      {
+        "$type": "daut.OmissionErrorReport",
+        "monitor": "DispatchReplyCompleteMonitor",
+        "state": "hot(complete 3)",
+        "instance": "3",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 5,
+            "event": "DispatchRequest(1,3)"
+          },
+          {
+            "st": "hot(reply to 3)",
+            "eventNr": 6,
+            "event": "DispatchReply(1,3)"
+          }
+        ]
+      }
+    ]
+  },
+  "Monitors": {},
+  "MonotonicMonitor": {
+    "1": [
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "MonotonicMonitor",
+        "state": "watch(1 seen, next should be 2)",
+        "eventNr": 2,
+        "event": "DispatchRequest(1,1)",
+        "instance": "1",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 1,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "st": "watch(1 seen, next should be 2)",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          }
+        ],
+        "msg": []
+      },
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "MonotonicMonitor",
+        "state": "watch(1 seen, next should be 2)",
+        "eventNr": 5,
+        "event": "DispatchRequest(1,3)",
+        "instance": "1",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "st": "watch(1 seen, next should be 2)",
+            "eventNr": 5,
+            "event": "DispatchRequest(1,3)"
+          }
+        ],
+        "msg": []
+      }
+    ]
+  }
+}
+
+```
+
+The JSON is a map from monitor names to maps, which map instance ids to sequences of reports. 
+
+#### Other Ways of Indicating Instance Ids
+
+Above we overrode the `instanceOf` method to identify instances. There are two alternative ways of doing this
+
+1. As already shown, state defining methods, such as `hot`, `watch`, `next`, `wnext`, can take a list of arguments, which will be used to label these states. If the first element of such a value list is `ID(e)` for some expression `e`, the value of `e` will be used as index for the state being entered.
+2. When defining a state as a case class, the first statement of the body can be `setIndexId(e)`, which will achieve the same objective.
+
+Note that if no id is defined for a target state, it inherits the id from the source state. Hence with these explicit methods it is only necessary to indicate the id once, as e.g. in:
+
+```scala
+class DispatchReplyCompleteMonitor extends CommandMonitor {
+  always {
+    case DispatchRequest(taskId, cmdNum) =>
+      hot(ID(cmdNum), s"reply to $cmdNum") {
+        case DispatchRequest(`taskId`, `cmdNum`) => error
+        case DispatchReply(`taskId`, `cmdNum`) =>
+          hot(s"complete $cmdNum") {
+            case CommandCompleted(`taskId`, `cmdNum`) => ok
+          }
+      }
+  }
+}
+```
+
+
+#### Getting All Result Reports
 
 At any point in time, the current reports (including error messages) of a monitor, and all its submonitors, can be extracted with the method:
 
@@ -1656,14 +1992,14 @@ Here `Report` is a super type (trait) with the following subtype:
 
 ```scala
 trait Report
-case class TransitionErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: Int | String, trace: List[TraceEvent], msg: Option[String]) extends Report
-case class TransitionOkReport(monitor: String, state: String, eventNr: Long, event: String, instance: Int | String, trace: List[TraceEvent], msg: Option[String]) extends Report 
-case class OmissionErrorReport(monitor: String, state: String, instance: Int | String, trace: List[TraceEvent]) extends Report
-case class UserErrorReport(monitor: String, msg: String ) extends Report
+case class TransitionErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report
+case class TransitionOkReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report 
+case class OmissionErrorReport(monitor: String, state: String, instance: String, trace: List[TraceEvent]) extends Report
+case class UserErrorReport(monitor: String, msg: String) extends Report
 case class UserReport(monitor: String, msg: String) extends Report
 ```
 
-#### Get Result Summary
+#### Getting Result Summary of the Reports
 
 The following method returns a summary of the result of monitoring::
 
@@ -1683,35 +2019,17 @@ case class ErrorStatus(
 
 It contains the name of the monitor, the number of errors, and similar results for
 all sub monitors as well as all abstract monitors connected to via calls of
-the `monitorAbstraction` method. Note that the `errorCount` of a monitor does not include
-the errors of the sub monitors/abstract monitors.
+the `monitorAbstraction` method. Note that the `errorCount` of a monitor does not include the errors of the sub monitors/abstract monitors.
 
-#### Printing Monitor States
-
-The following method prints the internal memory of a monitor:
+The following method returns a flat map from monitor names to the error count:
 
 ```scala
-def printStates(): Unit
+def getErrorStatusMap: Map[String, Int]
 ```
 
-#### Printing Selected Triggering Events on Standard Out
+The contents is semantically the same as when calling `getErrorStatus`, but might be easier to process.
 
-There are a number of options for showing and recording which events cause transitions to trigger in monitors.
-
-The following method when called on a monitor object with `flag` being true (default parameter value) will cause events to be printed when triggering transitions in the monitor, and all its submonitors. 
-
-```scala
-def showTransitions(flag: Boolean = true): Monitor[E]
-```
-
-Note, however, that the submonitors must have been added already for a call of this
-method to have effect on the submonitors.
-
-Events will be printed out in color with different colors chosen for different monitors (in a circular manner since the number of colors is limited). The output will look something like the following, here for two monitors `M1` and `M2`, with the monitor name in square brackets and the event following.
-
-<div style="text-align: center;">
-  <img src="./images/event-colors.png" alt="Description" width="100">
-</div>
+#### Controlling Output
 
 It is possible to control how events are reported by overriding the following method:
 
@@ -1722,92 +2040,6 @@ protected def renderEventAs(event: E): Option[String] = None
 By default, when applied to an event `e`, it returns `None`, which means that the event will be printed
 as the default `e.toString()`. The user can override the method to instead return `Some(s)` for various events, resulting in the event as being rendered as `s` instead. This can e.g. be used to highlight certain arguments to the event, or/and filter out arguments.
 
-#### Printing All Triggering Events on Standard Out
-
-An alternative is to set the following variable to true, which will cause all events that trigger a transition, in any monitor, to be printed (`Monitor` is an object).
-
-```scala
-DautOptions.SHOW_TRANSITIONS: Boolean = true
-```
-
-#### Writing Events as JSON Objects to Permanent Memory
-
-Finally, it is possible to cause selected events that trigger transitions to be written in JSON format to a file.
-
-Assume we have defined the following events and monitor.
-
-```scala
-sealed trait ConcreteEvent
-case class DispatchRequest(taskId: Int, cmdNum: Int) extends ConcreteEvent
-case class DispatchReply(taskId: Int, cmdNum: Int) extends ConcreteEvent
-case class CommandComplete(taskId: Int, cmdNum: Int) extends ConcreteEvent
-
-class ConcreteMonitor extends Monitor[ConcreteEvent] {
-  always {
-    case DispatchRequest(taskId, cmdNum) =>
-      hot {
-        case DispatchRequest(`taskId`, `cmdNum`) => error
-        case DispatchReply(`taskId`, `cmdNum`) =>
-          hot {
-            case CommandComplete(`taskId`, `cmdNum`) => ok
-          }
-      }
-  }
-}
-```
-
-First we have to define an encoder function, which maps events to string representations of JSON objects. One way is to use the json4s library. This function will below be provided as argument to a Daut function. Note that if this function returns `None` for an event, this event will not be written to permanent memory as a JSON object.
-
-```scala
-import org.json4s._
-import org.json4s.native.Serialization
-import org.json4s.native.Serialization.write
-
-
-implicit val formats: Formats = Serialization.formats(NoTypeHints)
-
-def encoder(obj: Any): Option[String] = {
-  val map = obj match {
-    case DispatchRequest(taskId, cmdNum) => 
-      Map("kind" -> "DispatchRequest", "name" -> taskId, "cmdNum" -> cmdNum)
-    case DispatchReply(taskId, cmdNum) => 
-      Map("kind" -> "DispatchReply", "name" -> taskId, "cmdNum" -> cmdNum)
-    case CommandComplete(taskId, cmdNum) => 
-      Map("kind" -> "CommandComplete", "name" -> taskId, "cmdNum" -> cmdNum)
-    case _ => return None
-  }
-  Some(write(map))
-}
-```
-
-We can now ask Daut to log events in a file as follows:
-
-```scala
-Monitor.logTransitionsAsJson("output.jsonl", encoder)
-```
-
-After that if we apply the monitor to a trace as follows:
-
-```scala
-val trace: List[ConcreteEvent] = List(
-  DispatchRequest(1, 1),
-  DispatchReply(1, 1),
-  CommandComplete(1, 1)
-)
-
-val monitor = new ConcreteMonitor
-monitor(trace)
-```
-
-a file `output.jsonl` will be created containing the following lines:
-
-```
-{"kind":"DispatchRequest","name":1,"cmdNum":1}
-{"kind":"DispatchReply","name":1,"cmdNum":1}
-{"kind":"CommandComplete","name":1,"cmdNum":1}
-```
-
-See [daut48_log_json.Main](./src/test/scala/daut48_log_json/Main.scala) for an example.
 
 ## Using Piper Mode for JSONL Files
 

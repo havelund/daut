@@ -1,0 +1,96 @@
+{
+  "CompletionMonitor": {},
+  "DispatchMonitor": {},
+  "DispatchReplyCompleteMonitor": {
+    "1": [
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "DispatchReplyCompleteMonitor",
+        "state": "hot(reply to 1)",
+        "eventNr": 2,
+        "event": "DispatchRequest(1,1)",
+        "instance": "1",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 1,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "st": "hot(reply to 1)",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          }
+        ],
+        "msg": []
+      }
+    ],
+    "3": [
+      {
+        "$type": "daut.OmissionErrorReport",
+        "monitor": "DispatchReplyCompleteMonitor",
+        "state": "hot(complete 3)",
+        "instance": "3",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 5,
+            "event": "DispatchRequest(1,3)"
+          },
+          {
+            "st": "hot(reply to 3)",
+            "eventNr": 6,
+            "event": "DispatchReply(1,3)"
+          }
+        ]
+      }
+    ]
+  },
+  "Monitors": {},
+  "MonotonicMonitor": {
+    "1": [
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "MonotonicMonitor",
+        "state": "watch(1 seen, next should be 2)",
+        "eventNr": 2,
+        "event": "DispatchRequest(1,1)",
+        "instance": "1",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 1,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "st": "watch(1 seen, next should be 2)",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          }
+        ],
+        "msg": []
+      },
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "MonotonicMonitor",
+        "state": "watch(1 seen, next should be 2)",
+        "eventNr": 5,
+        "event": "DispatchRequest(1,3)",
+        "instance": "1",
+        "trace": [
+          {
+            "st": "always",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "st": "watch(1 seen, next should be 2)",
+            "eventNr": 5,
+            "event": "DispatchRequest(1,3)"
+          }
+        ],
+        "msg": []
+      }
+    ]
+  }
+}

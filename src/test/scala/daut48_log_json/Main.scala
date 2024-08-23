@@ -85,7 +85,6 @@ object Main {
     )
 
     DautOptions.SHOW_TRANSITIONS = true
-    Monitor.logTransitionsAsJson("output.jsonl", encoder)
 
     val monitor = new ConcreteMonitor
     monitor(trace)
