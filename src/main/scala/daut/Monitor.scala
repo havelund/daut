@@ -1072,6 +1072,13 @@ class Monitor[E] {
       transitionsInitialized = true
       label = "watch" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
+      if (values.nonEmpty) {
+        values.head match {
+          case ID(x) =>
+            setInstanceId(x)
+          case _ =>
+        }
+      }
       this
     }
 

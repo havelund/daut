@@ -30,13 +30,13 @@ case class DispatchReply(taskId: Int, cmdNum: Int) extends Event
 case class CommandCompleted(taskId: Int, cmdNum: Int) extends Event
 
 class CommandMonitor extends Monitor[Event] {
-//  override def instanceOf(event: Event): Option[Any] = {
-//    event match {
-//      case DispatchRequest(_, cmdNum) => Some(cmdNum)
-//      case DispatchReply(_, cmdNum) => Some(cmdNum)
-//      case CommandCompleted(_, cmdNum) => Some(cmdNum)
-//    }
-//  }
+  override def instanceOf(event: Event): Option[Any] = {
+    event match {
+      case DispatchRequest(_, cmdNum) => Some(cmdNum)
+      case DispatchReply(_, cmdNum) => Some(cmdNum)
+      case CommandCompleted(_, cmdNum) => Some(cmdNum)
+    }
+  }
 }
 
 class MonotonicMonitor extends CommandMonitor {
@@ -72,7 +72,7 @@ class CompletionMonitor extends CommandMonitor {
   }
 
   case class NoMoreCompletions(cmdNum: Int) extends state {
-    watch {
+    watch(ID(cmdNum)) {
       case CommandCompleted(_, `cmdNum`) => error
     }
   }

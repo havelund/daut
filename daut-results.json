@@ -2,14 +2,14 @@
   "CompletionMonitor": {},
   "DispatchMonitor": {},
   "DispatchReplyCompleteMonitor": {
-    "N/A": [
+    "1": [
       {
         "$type": "daut.TransitionErrorReport",
         "monitor": "DispatchReplyCompleteMonitor",
         "state": "hot(reply to 1)",
         "eventNr": 2,
         "event": "DispatchRequest(1,1)",
-        "instance": "N/A",
+        "instance": "1",
         "trace": [
           {
             "st": "always",
@@ -23,12 +23,14 @@
           }
         ],
         "msg": []
-      },
+      }
+    ],
+    "3": [
       {
         "$type": "daut.OmissionErrorReport",
         "monitor": "DispatchReplyCompleteMonitor",
         "state": "hot(complete 3)",
-        "instance": "N/A",
+        "instance": "3",
         "trace": [
           {
             "st": "always",
@@ -46,14 +48,14 @@
   },
   "Monitors": {},
   "MonotonicMonitor": {
-    "N/A": [
+    "1": [
       {
         "$type": "daut.TransitionErrorReport",
         "monitor": "MonotonicMonitor",
         "state": "watch(1 seen, next should be 2)",
         "eventNr": 2,
         "event": "DispatchRequest(1,1)",
-        "instance": "N/A",
+        "instance": "1",
         "trace": [
           {
             "st": "always",
@@ -74,7 +76,7 @@
         "state": "watch(1 seen, next should be 2)",
         "eventNr": 5,
         "event": "DispatchRequest(1,3)",
-        "instance": "N/A",
+        "instance": "1",
         "trace": [
           {
             "st": "always",
