@@ -1954,10 +1954,7 @@ This file is shown below. It represents a map from monitor names to instance map
 
 #### Other Ways of Indicating Instance Ids
 
-Above we overrode the `instanceOf` method to identify instances. There are two alternative ways of doing this
-
-1. As already shown, state defining methods, such as `hot`, `watch`, `next`, `wnext`, can take a list of arguments, which will be used to label these states. If the first element of such a value list is `ID(e)` for some expression `e`, the value of `e` will be used as instance id for the state being entered.
-2. When defining a state as a case class, the first statement of the body can be `setInstanceId(e)`, which will achieve the same objective.
+Above we overrode the `instanceOf` method to identify instances. There is an explicit case by case alternative way to do this. As already shown, state defining methods, such as `hot`, `watch`, `next`, `wnext`, can take a list of arguments, which will be used to label these states. If the first element of such a value list is `ID(e)` for some expression `e`, the value of `e` will be used as instance id for the state.
 
 Note that if no id is defined for a target state, it inherits the id from the source state. Hence with these explicit methods it is only necessary to indicate the id once, as e.g. in:
 

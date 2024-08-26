@@ -1109,6 +1109,13 @@ class Monitor[E] {
       transitionsInitialized = true
       label = "always" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
+      if (values.nonEmpty) {
+        values.head match {
+          case ID(x) =>
+            setInstanceId(x)
+          case _ =>
+        }
+      }
       this
     }
 
@@ -1147,6 +1154,13 @@ class Monitor[E] {
       label = "hot" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
       isFinal = false
+      if (values.nonEmpty) {
+        values.head match {
+          case ID(x) =>
+            setInstanceId(x)
+          case _ =>
+        }
+      }
       this
     }
 
@@ -1183,6 +1197,13 @@ class Monitor[E] {
       transitionsInitialized = true
       label = "wnext" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
+      if (values.nonEmpty) {
+        values.head match {
+          case ID(x) =>
+            setInstanceId(x)
+          case _ =>
+        }
+      }
       this
     }
 
@@ -1221,6 +1242,13 @@ class Monitor[E] {
       label = "next" + values.map(_.toString).mkString("(", ",", ")")
       transitions = ts
       isFinal = false
+      if (values.nonEmpty) {
+        values.head match {
+          case ID(x) =>
+            setInstanceId(x)
+          case _ =>
+        }
+      }
       this
     }
 
