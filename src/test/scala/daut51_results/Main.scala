@@ -1,6 +1,7 @@
 package daut51_results
 
 import daut.{DautOptions, Monitor}
+import scala.sys
 
 /*
 Requirement:
@@ -21,8 +22,11 @@ received), and completed.
  */
 
 sealed trait Event
+
 case class DispatchRequest(taskId: Int, cmdNum: Int) extends Event
+
 case class DispatchReply(taskId: Int, cmdNum: Int) extends Event
+
 case class CommandCompleted(taskId: Int, cmdNum: Int) extends Event
 
 class CommandMonitor extends Monitor[Event] {
@@ -81,22 +85,84 @@ class Monitors extends CommandMonitor {
   )
 }
 
+def reportOnMonitors(monitor: Monitor[?]): Unit = {
+  def reportOnMonitor(monitor: Monitor[?]): Unit = {
+    def headline(s: String): Unit = {
+      println("---" + s)
+    }
+
+    val line = "REPORT FOR: " + monitor.getMonitorName
+    val sep = "=" * line.length
+    println()
+    println(sep)
+    println(line)
+    println(sep)
+    // get all states:
+    headline("All states")
+    for (s <- monitor.getAllStates) {
+      println("  state:")
+      println(s"    name      = ${s.getName}")
+      println(s"    instid    = ${s.getInstanceId}")
+      println(s"    instidstr = ${s.getInstanceIdString}")
+      println(s"    trace     = ${s.getTrace}")
+    }
+    // whether transition triggered in monitor:
+    headline(s"This monitor triggered: ${monitor.transitionTriggered.toString}")
+    // Get error counts:
+    headline("Error counts")
+    println(s"  for this monitor        : ${monitor.getErrorCountForThisMonitor}")
+    println(s"  for all monitors        : ${monitor.getErrorCount}")
+    println(s"  latest for this monitor : ${monitor.getLatestErrorCountForThisMonitor}")
+    println(s"  latest for all monitors : ${monitor.getLatestErrorCount}")
+    // Get reports:
+    headline("Reports for this monitor")
+    for (r <- monitor.getReportsForThisMonitor) {
+      println("  " + r.toString)
+    }
+    headline("Reports including for submonitors")
+    for (r <- monitor.getReports) {
+      println("  " + r.toString)
+    }
+    // Get latest reports:
+    headline("Latest reports for this monitor")
+    for (r <- monitor.getLatestReportsForThisMonitor) {
+      println("  " + r.toString)
+    }
+    headline("Latest reports")
+    for (r <- monitor.getLatestReports) {
+      println("  " + r.toString)
+    }
+    // get all sub monitors, direct as well as recursively:
+    headline("Direct sub monitors")
+    for (m <- monitor.getDirectSubMonitors) {
+      println("  " + m.getMonitorName)
+    }
+    headline("Direct abstract monitors")
+    for (m <- monitor.getDirectAbstractMonitors) {
+      println("  " + m.getMonitorName)
+    }
+  }
+
+  reportOnMonitor(monitor)
+  for (m <- monitor.getAllSubAbsMonitors) {
+    reportOnMonitor(m)
+  }
+}
+
 object Main {
   def main(args: Array[String]): Unit = {
     DautOptions.DEBUG = false
     DautOptions.SHOW_TRANSITIONS = false
     DautOptions.REPORT_OK_TRANSITIONS = false
     DautOptions.REPORT_OK_TRANSITIONS = false
-    val trace: List[Event] = List(
-      DispatchRequest(1, 1),
-      DispatchRequest(1, 1),
-      DispatchReply(1, 1),
-      CommandCompleted(1, 1),
-      DispatchRequest(1, 3),
-      DispatchReply(1, 3)
-    )
     val monitor = new Monitors
-    monitor(trace)
+    monitor(DispatchRequest(1, 1))
+    monitor(DispatchRequest(1, 1))
+    monitor(DispatchReply(1, 1))
+    monitor(CommandCompleted(1, 1))
+    monitor(DispatchRequest(1, 3)); reportOnMonitors(monitor); sys.exit(0)
+    monitor(DispatchReply(1, 3))
+    monitor.end()
   }
 }
 

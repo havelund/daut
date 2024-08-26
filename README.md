@@ -1683,11 +1683,12 @@ This section describes various ways of observing the results of a monitor.
 
 #### Example
 
-We shall first introduce an example. The following requirements must be satisfied.
+We shall first introduce an example. 
+See [src/test/scala/daut51_results/Main.scala](src/test/scala/daut51_results/Main.scala) for the complete example discussed in this section. The following requirements must be satisfied.
 
 ###### Requirement:
 
-Commands and identified by a task id and a command number.
+Commands are identified by a task id and a command number.
 Commands are dispatched for execution on a processor, replied to (acknowledgement of dispatch received), and completed. 
 
    - **Dispatch**
@@ -1703,8 +1704,8 @@ Commands are dispatched for execution on a processor, replied to (acknowledgemen
 The following monitor implements this requirements. It could be made less verbose by combining monitors, but the objective here is to illustrate result generation and for that we need several monitors, including sub monitors.
 
 We first define a super monitor `CommandMonitor` which overrides the method
-`instanceOf`, which for each event identifies what is called the instance id.
-Instance ids are useful for understanding output to identify what instance of an event sequence is being monitored by a certain state of the monitor. Technically the `keyOf` function which can be overridden by the user identifies such instance ids. However, `keyOf` is used for optimizing the monitoring using indexes. In our case here we just want to identify such keys for structuring the results of monitoring so that they are easier to comprehend. In our example we want to use the command number as the instance id for a monitor. 
+`instanceOf`, which for each event identifies what is called the _instance id_.
+Instance ids are useful for understanding output to identify what instance of an event sequence is being monitored by a certain state of the monitor. Technically the `keyOf` function which can be overridden by the user identifies such instance ids. However, `keyOf` is used for optimizing the monitoring using indexes. In our case here we just want to identify such keys for structuring the results of monitoring so that they are easier to comprehend. In our example we want to use the command number as the instance id for a monitor. This way it will be easier in the generated reports to track what happens with a particular command number. We could alternatively also have chosen the task id. It depends on the situation. Note that instance ids do not need to be defined. In this case all instance ids are "N/A".
 
 ```scala
 sealed trait Event
@@ -1776,21 +1777,19 @@ If we apply this monitor as follows:
 ```scala
 object Main {
   def main(args: Array[String]): Unit = {
-    val trace: List[Event] = List(
-      DispatchRequest(1, 1),
-      DispatchRequest(1, 1),
-      DispatchReply(1, 1),
-      CommandCompleted(1, 1),
-      DispatchRequest(1, 3),
-      DispatchReply(1, 3)
-    )
     val monitor = new Monitors
-    monitor(trace)
+    monitor(DispatchRequest(1, 1))
+    monitor(DispatchRequest(1, 1))
+    monitor(DispatchReply(1, 1))
+    monitor(CommandCompleted(1, 1))
+    monitor(DispatchRequest(1, 3))
+    monitor(DispatchReply(1, 3))
+    monitor.end()
   }
 }
 ```
 
-The following output is generated (here only showing the summary at the end of monitoring):
+The following output is generated, here only showing the summary at the end of monitoring. These reports are also generated during monitoring, but may interleave with other output from the monitored program.
 
 ```
 ========================
@@ -1849,8 +1848,8 @@ The reader can try and understand why these error reports are generated.
 Note that the error count for a super monitor includes the counts for the 
 sub monitors recursively.
 
-In addition a JSON file is generated, written to the JSON file indicated by the `DautOptions.RESULT_FILE`, which has the optional value `daut-results.json`. 
-A snippet of this JSON file is shown below.
+In addition a JSON file is generated, written to the `.json` file indicated by the `DautOptions.RESULT_FILE`, which has the optional value `daut-results.json`. 
+This file is shown below. It represents a map from monitor names to instance maps. An instance map maps each instance id to a sequence of reports for that instance id in that monitor.
 
 
 ```json
@@ -1953,14 +1952,12 @@ A snippet of this JSON file is shown below.
 
 ```
 
-The JSON is a map from monitor names to maps, which map instance ids to sequences of reports. 
-
 #### Other Ways of Indicating Instance Ids
 
 Above we overrode the `instanceOf` method to identify instances. There are two alternative ways of doing this
 
-1. As already shown, state defining methods, such as `hot`, `watch`, `next`, `wnext`, can take a list of arguments, which will be used to label these states. If the first element of such a value list is `ID(e)` for some expression `e`, the value of `e` will be used as index for the state being entered.
-2. When defining a state as a case class, the first statement of the body can be `setIndexId(e)`, which will achieve the same objective.
+1. As already shown, state defining methods, such as `hot`, `watch`, `next`, `wnext`, can take a list of arguments, which will be used to label these states. If the first element of such a value list is `ID(e)` for some expression `e`, the value of `e` will be used as instance id for the state being entered.
+2. When defining a state as a case class, the first statement of the body can be `setInstanceId(e)`, which will achieve the same objective.
 
 Note that if no id is defined for a target state, it inherits the id from the source state. Hence with these explicit methods it is only necessary to indicate the id once, as e.g. in:
 
@@ -1979,57 +1976,6 @@ class DispatchReplyCompleteMonitor extends CommandMonitor {
 }
 ```
 
-
-#### Getting All Result Reports
-
-At any point in time, the current reports (including error messages) of a monitor, and all its submonitors, can be extracted with the method:
-
-```scala
-def getReports: List[Report]
-```
-
-Here `Report` is a super type (trait) with the following subtype:
-
-```scala
-trait Report
-case class TransitionErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report
-case class TransitionOkReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report 
-case class OmissionErrorReport(monitor: String, state: String, instance: String, trace: List[TraceEvent]) extends Report
-case class UserErrorReport(monitor: String, msg: String) extends Report
-case class UserReport(monitor: String, msg: String) extends Report
-```
-
-#### Getting Result Summary of the Reports
-
-The following method returns a summary of the result of monitoring::
-
-```scala
-def getErrorStatus(): ErrorStatus
-```
-
-The `ErrorStatus` class is defined as follows:
-
-```scala
-case class ErrorStatus(
-             monitorName: String,
-             errorCount: Int,
-             errorCountSum: Int,
-             errorStatusOfSubMonitors: List[ErrorStatus],
-             errorStatusOfAbstractMonitors: List[ErrorStatus]) 
-```
-
-It contains the name of the monitor, the number of errors for the monitor, and the sum of of errors including also sub monitors, and similar results for
-all sub monitors as well as all abstract monitors connected to via calls of
-the `monitorAbstraction` method. 
-
-The following method returns a flat map from monitor names to the error count:
-
-```scala
-def getErrorStatusMap: Map[String, Int]
-```
-
-The contents is semantically the same as when calling `getErrorStatus`, but might be easier to process.
-
 #### Controlling Output
 
 It is possible to control how events are reported by overriding the following method:
@@ -2041,6 +1987,90 @@ protected def renderEventAs(event: E): Option[String] = None
 By default, when applied to an event `e`, it returns `None`, which means that the event will be printed
 as the default `e.toString()`. The user can override the method to instead return `Some(s)` for various events, resulting in the event as being rendered as `s` instead. This can e.g. be used to highlight certain arguments to the event, or/and filter out arguments.
 
+#### Accessing Current Monitor Memory
+
+After each submission of an event to a monitor one can access the status of the monitor and its sub monitors and abstract monitors with the following collection of methods.
+
+First of all, the following methods return respectively the direct sub monitors, the direct abstract montitors, and all the sub and abstract monitors reccursively for a monitor:
+
+```scala
+def getDirectSubMonitors: List[Monitor[E]]
+def getDirectAbstractMonitors: List[Monitor[?]]
+def getAllSubAbsMonitors: List[Monitor[?]]
+```
+
+The following method returns true if a transition triggered in the monitor, not including its sub monitors:
+
+```scala
+def transitionTriggered: Boolean 
+```
+
+One can access all the states in the memory of the monitor, not including sub monitors, with the following method, which returns a set of states. The type of
+states is also shown, including some methods available to access the contents of a state. `getInstanceIdString` returns a string version of `getInstanceId` with `None` replaced by "N/A".
+
+```scala
+def getAllStates: Set[state]
+
+trait state
+  def getName: String
+  def getInstanceId: Option[Any]
+  def getInstanceIdString: String
+  def getTrace: List[TraceEvent]
+```
+
+The following methods yield the error count for this monitor, respectively for this monitor and all its sub monitors. Two methods furthermore provide these numbers for just the most recent event.
+
+```scala
+def getErrorCountForThisMonitor: Int
+def getErrorCount
+
+def getLatestErrorCountForThisMonitor: Int
+def getLatestErrorCount: Int
+```
+
+The following method returns a flat map from monitor names to the total error counts from start of monitoring:
+
+```scala
+def getErrorStatusMap: Map[String, Int]
+```
+
+The following method returns a summary of the result of monitoring::
+
+```scala
+def getErrorStatus(): ErrorStatus
+
+case class ErrorStatus(
+             monitorName: String,
+             errorCount: Int,
+             errorCountSum: Int,
+             errorStatusOfSubMonitors: List[ErrorStatus],
+             errorStatusOfAbstractMonitors: List[ErrorStatus]) 
+```
+
+An `ErrorStatus` contains the name of the monitor, the number of errors for the monitor, and the sum of errors including also sub monitors, and similar results for all sub monitors as well as all abstract monitors connected to via calls of
+the `monitorAbstraction` method. 
+
+Finally, we can get the reports produced for this monitor, respectively for this monitor and all its sub monitors. Two methods furthermore provide these reports for just the most recent event.
+
+
+```scala
+def getReportsForThisMonitor: List[Report]
+def getReports: List[Report]
+
+def getLatestReportsForThisMonitor: List[Report]
+def getLatestReports: List[Report]
+```
+
+Here `Report` is a super type (trait) with the following subtypes:
+
+```scala
+trait Report
+case class TransitionErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report
+case class TransitionOkReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report 
+case class OmissionErrorReport(monitor: String, state: String, instance: String, trace: List[TraceEvent]) extends Report
+case class UserErrorReport(monitor: String, msg: String) extends Report
+case class UserReport(monitor: String, msg: String) extends Report
+```
 
 ## Using Piper Mode for JSONL Files
 
