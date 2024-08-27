@@ -12,20 +12,62 @@
         "instance": "1",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 1,
             "event": "DispatchRequest(1,1)"
           },
           {
-            "st": "hot(reply to 1)",
+            "state": "hot(reply to 1)",
             "eventNr": 2,
             "event": "DispatchRequest(1,1)"
           }
         ],
         "msg": []
+      },
+      {
+        "$type": "daut.UserErrorReport",
+        "monitor": "DispatchReplyCompleteMonitor",
+        "state": "hot(reply to 1)",
+        "eventNr": 3,
+        "event": "DispatchReply(1,1)",
+        "instance": "1",
+        "trace": [
+          {
+            "state": "always",
+            "eventNr": 2,
+            "event": "DispatchRequest(1,1)"
+          },
+          {
+            "state": "hot(reply to 1)",
+            "eventNr": 3,
+            "event": "DispatchReply(1,1)"
+          }
+        ],
+        "msg": "We saw a reply for 1/1"
       }
     ],
     "3": [
+      {
+        "$type": "daut.UserErrorReport",
+        "monitor": "DispatchReplyCompleteMonitor",
+        "state": "hot(reply to 3)",
+        "eventNr": 6,
+        "event": "DispatchReply(1,3)",
+        "instance": "3",
+        "trace": [
+          {
+            "state": "always",
+            "eventNr": 5,
+            "event": "DispatchRequest(1,3)"
+          },
+          {
+            "state": "hot(reply to 3)",
+            "eventNr": 6,
+            "event": "DispatchReply(1,3)"
+          }
+        ],
+        "msg": "We saw a reply for 1/3"
+      },
       {
         "$type": "daut.OmissionErrorReport",
         "monitor": "DispatchReplyCompleteMonitor",
@@ -33,12 +75,12 @@
         "instance": "3",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 5,
             "event": "DispatchRequest(1,3)"
           },
           {
-            "st": "hot(reply to 3)",
+            "state": "hot(reply to 3)",
             "eventNr": 6,
             "event": "DispatchReply(1,3)"
           }
@@ -58,12 +100,12 @@
         "instance": "1",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 1,
             "event": "DispatchRequest(1,1)"
           },
           {
-            "st": "watch(1 seen, next should be 2)",
+            "state": "watch(1 seen, next should be 2)",
             "eventNr": 2,
             "event": "DispatchRequest(1,1)"
           }
@@ -79,12 +121,12 @@
         "instance": "1",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 2,
             "event": "DispatchRequest(1,1)"
           },
           {
-            "st": "watch(1 seen, next should be 2)",
+            "state": "watch(1 seen, next should be 2)",
             "eventNr": 5,
             "event": "DispatchRequest(1,3)"
           }

@@ -11,6 +11,7 @@ import scala.reflect.Selectable.reflectiveSelectable
 import upickle.default.*
 
 import scala.collection.immutable.ListMap
+import scala.compiletime.uninitialized
 
 /**
   * Daut options to be set by the user.
@@ -320,22 +321,34 @@ case class OmissionErrorReport(
 /**
   * Represents an error reported by a user explicitly.
   *
-  * @param monitor the monitor it occurred in.
-  * @param msg     a user message.
+  * @param monitor  the monitor it occurred in.
+  * @param state    the state it occurred in.
+  * @param eventNr  the number of the event in the input stream.
+  * @param event    the event causing the error.
+  * @param instance instance as pointed out by user.
+  * @param trace    the error trace.
+  * @param msg      a user message.
   */
 
 case class UserErrorReport(
                             monitor: String,
+                            state: String,
+                            eventNr: Long,
+                            event: String,
+                            instance: String,
+                            trace: List[TraceEvent],
                             msg: String
                           ) extends Report {
   override def toString: String = {
-    val headline = s"*** DAUT USER ERROR REPORT $monitor"
+    val headline = s"*** DAUT USER ERROR REPORT in state $monitor.$state"
     val separator = "-" * headline.length
     var message = ""
     message += s"$separator\n"
     message += s"$headline\n"
     message += s"$separator\n"
     message += s"$msg\n"
+    message += s"Event number $eventNr: $event\n"
+    message += s"${formatTrace(trace)}\n"
     message += s"$separator\n"
     message
   }
@@ -344,22 +357,34 @@ case class UserErrorReport(
 /**
   * Represents a user information report. This is not an error.
   *
-  * @param monitor the monitor it is reported from.
-  * @param msg     a user message.
+  * @param monitor  the monitor it was reported in.
+  * @param state    the state it was reported in.
+  * @param eventNr  the number of the event in the input stream.
+  * @param event    the event causing the report.
+  * @param instance instance as pointed out by user.
+  * @param trace    the trace.
+  * @param msg      a user message.
   */
 
 case class UserReport(
                        monitor: String,
+                       state: String,
+                       eventNr: Long,
+                       event: String,
+                       instance: String,
+                       trace: List[TraceEvent],
                        msg: String
                      ) extends Report {
   override def toString: String = {
-    val headline = s"<info> DAUT USER REPORT $monitor"
+    val headline = s"!!! DAUT USER REPORT in state $monitor.$state"
     val separator = "." * headline.length
     var message = ""
     message += s"$separator\n"
     message += s"$headline\n"
     message += s"$separator\n"
     message += s"$msg\n"
+    message += s"Event number $eventNr: $event\n"
+    message += s"${formatTrace(trace)}\n"
     message += s"$separator\n"
     message
   }
@@ -371,13 +396,13 @@ case class UserReport(
   * Is printed out when an error, or ok if `DautOptions.RECORD_OK == true`, is detected,
   * or in debug mode: `DautOptions.DEBUG == true`.
   *
-  * @param st      : the source state of the transition.
+  * @param state   the source state of the transition.
   * @param eventNr number of event.
   * @param event   the event.
   */
 
-case class TraceEvent(st: String, eventNr: Long, event: String) {
-  override def toString: String = s"State: $st, EventNr: $eventNr, Event: $event"
+case class TraceEvent(state: String, eventNr: Long, event: String) {
+  override def toString: String = s"State: $state, EventNr: $eventNr, Event: $event"
 }
 
 /**
@@ -416,6 +441,19 @@ class Monitor[E] {
     */
 
   case class ID(id: Any)
+  
+  /**
+    * Stores the current dynamic context, including the currently processed event,
+    * the current state that this event is being submitted to, and the current
+    * trace including the last event. This is used by
+    * the methods `report` and `reportError` which the user can call.
+    */
+
+  class Context {
+    var currentEvent: E = uninitialized
+    var currentState: state = uninitialized
+    var currentTrace: List[TraceEvent] = uninitialized
+  }
 
   /**
     * This class represents all the active states in a monitor (excluding those of its sub-monitors).
@@ -657,7 +695,13 @@ class Monitor[E] {
     */
 
   private var invariants: List[(String, Unit => Boolean)] = Nil
+  
+  /**
+    * The current context.
+    */
 
+  private var context: Context = Context()
+  
   /**
     * A monitor's body consists of a sequence of state declarations. The very first state
     * will become the initial state. This variable is used to keep track of when this
@@ -734,13 +778,20 @@ class Monitor[E] {
 
   /**
     * Reports a message. This is not considered an error by Daut, meaning that it
-    * does not increase the error count.
+    * does not increase the error count. This is supposed to be called by the user.
     *
     * @param message the message to be reported.
     */
 
   def report(message: String): Unit = {
-    val report = UserReport(monitorName, message)
+    val report = UserReport(
+      monitorName,
+      context.currentState.getName,
+      Monitor.eventNumber,
+      context.currentEvent.toString,
+      context.currentState.getInstanceIdString,
+      context.currentTrace,
+      message) 
     addReport(report)
   }
 
@@ -1320,8 +1371,10 @@ class Monitor[E] {
 
     def apply(event: E): Option[Set[state]] =
       if (transitions.isDefinedAt(event)) {
+        val newTrace = trace :+ TraceEvent(this.getName, Monitor.eventNumber, event.toString) 
+        context.currentState = this 
+        context.currentTrace = newTrace 
         val newStates = transitions(event)
-        val newTrace = trace :+ TraceEvent(this.getName, Monitor.eventNumber, event.toString)
         for (ns <- newStates) {
           ns match {
             case `stay` =>
@@ -2080,6 +2133,7 @@ class Monitor[E] {
     */
 
   def verify(event: E, eventNr: Long = 0): this.type = {
+    context.currentEvent = event
     errorCountDueToLatestEvent = 0
     transitionTriggeredDueToLatestEvent = false
     reportsFromLastEvent = List()
@@ -2260,10 +2314,10 @@ class Monitor[E] {
           update(monitor, instance, report)
         case OmissionErrorReport(monitor, state, instance, trace) =>
           update(monitor, instance, report)
-        case UserErrorReport(monitor, msg) =>
-          update(monitor, "no-instance", report)
-        case UserReport(monitor, msg) =>
-          update(monitor, "no-instance", report)
+        case UserErrorReport(monitor, state, eventNr, event, instance, trace, msg) => 
+          update(monitor, instance, report) 
+        case UserReport(monitor, state, eventNr, event, instance, trace,  msg) =>
+          update(monitor, instance, report)
       }
     }
 
@@ -2472,14 +2526,21 @@ class Monitor[E] {
   }
 
   /**
-    * Reports an error, called by the user.
+    * Reports an error. This is supposed to be called by the user.
     *
     * @param message text string explaining the error. This will be printed as part of the
     *                error message.
     */
 
   protected def reportError(message: String): Unit = {
-    val report = UserErrorReport(monitorName, message)
+    val report = UserErrorReport(
+      monitorName,
+      context.currentState.getName,
+      Monitor.eventNumber,
+      context.currentEvent.toString,
+      context.currentState.getInstanceIdString,
+      context.currentTrace,
+      message) 
     createErrorReport(report)
   }
 

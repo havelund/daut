@@ -55,6 +55,7 @@ class DispatchReplyCompleteMonitor extends CommandMonitor {
       hot(s"reply to $cmdNum") {
         case DispatchRequest(`taskId`, `cmdNum`) => error
         case DispatchReply(`taskId`, `cmdNum`) =>
+          reportError(s"We saw a reply for $taskId/$cmdNum")
           hot(s"complete $cmdNum") {
             case CommandCompleted(`taskId`, `cmdNum`) => ok
           }

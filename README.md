@@ -1835,8 +1835,8 @@ Trace:
 ==============================
 Daut Error Status per Monitor:
 ==============================
-Monitors : 4
-    DispatchMonitor : 4
+Monitors : 0, sum = 4
+    DispatchMonitor : 0, sum = 4
         MonotonicMonitor : 2
         DispatchReplyCompleteMonitor : 2
     CompletionMonitor : 0
@@ -1845,8 +1845,10 @@ Monitors : 4
 
 The reader can try and understand why these error reports are generated.
 
-Note that the error count for a super monitor includes the counts for the 
-sub monitors recursively.
+Note that the error count for a super monitor includes the count specifically 
+for that monitor, as well as the sum of counts for this monitor and
+the sub monitors recursively. The output is nested according to the nesting
+of the sub monitors.
 
 In addition a JSON file is generated, written to the `.json` file indicated by the `DautOptions.RESULT_FILE`, which has the optional value `daut-results.json`. 
 This file is shown below. It represents a map from monitor names to instance maps. An instance map maps each instance id to a sequence of reports for that instance id in that monitor.
@@ -1867,12 +1869,12 @@ This file is shown below. It represents a map from monitor names to instance map
         "instance": "1",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 1,
             "event": "DispatchRequest(1,1)"
           },
           {
-            "st": "hot(reply to 1)",
+            "state": "hot(reply to 1)",
             "eventNr": 2,
             "event": "DispatchRequest(1,1)"
           }
@@ -1888,12 +1890,12 @@ This file is shown below. It represents a map from monitor names to instance map
         "instance": "3",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 5,
             "event": "DispatchRequest(1,3)"
           },
           {
-            "st": "hot(reply to 3)",
+            "state": "hot(reply to 3)",
             "eventNr": 6,
             "event": "DispatchReply(1,3)"
           }
@@ -1913,12 +1915,12 @@ This file is shown below. It represents a map from monitor names to instance map
         "instance": "1",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 1,
             "event": "DispatchRequest(1,1)"
           },
           {
-            "st": "watch(1 seen, next should be 2)",
+            "state": "watch(1 seen, next should be 2)",
             "eventNr": 2,
             "event": "DispatchRequest(1,1)"
           }
@@ -1934,12 +1936,12 @@ This file is shown below. It represents a map from monitor names to instance map
         "instance": "1",
         "trace": [
           {
-            "st": "always",
+            "state": "always",
             "eventNr": 2,
             "event": "DispatchRequest(1,1)"
           },
           {
-            "st": "watch(1 seen, next should be 2)",
+            "state": "watch(1 seen, next should be 2)",
             "eventNr": 5,
             "event": "DispatchRequest(1,3)"
           }
@@ -2013,6 +2015,8 @@ trait state
   def getInstanceId: Option[Any]
   def getInstanceIdString: String
   def getTrace: List[TraceEvent]
+
+case class TraceEvent(state: String, eventNr: Long, event: String)
 ```
 
 The following methods yield the error count for this monitor, respectively for this monitor and all its sub monitors. Two methods furthermore provide these numbers for just the most recent event.
@@ -2065,8 +2069,8 @@ trait Report
 case class TransitionErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report
 case class TransitionOkReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: Option[String]) extends Report 
 case class OmissionErrorReport(monitor: String, state: String, instance: String, trace: List[TraceEvent]) extends Report
-case class UserErrorReport(monitor: String, msg: String) extends Report
-case class UserReport(monitor: String, msg: String) extends Report
+case class UserErrorReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: String) extends Report
+case class UserReport(monitor: String, state: String, eventNr: Long, event: String, instance: String, trace: List[TraceEvent], msg: String) extends Report
 ```
 
 ## Using Piper Mode for JSONL Files
