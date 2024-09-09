@@ -1,137 +1,58 @@
 {
-  "CompletionMonitor": {},
-  "DispatchMonitor": {},
-  "DispatchReplyCompleteMonitor": {
-    "1": [
+  "DispatchCompletePast": {
+    "N/A": [
       {
-        "$type": "daut.TransitionErrorReport",
-        "monitor": "DispatchReplyCompleteMonitor",
-        "state": "hot(reply to 1)",
-        "eventNr": 2,
-        "event": "DispatchRequest(1,1)",
-        "instance": "1",
-        "trace": [
-          {
-            "state": "always",
-            "eventNr": 1,
-            "event": "DispatchRequest(1,1)"
-          },
-          {
-            "state": "hot(reply to 1)",
-            "eventNr": 2,
-            "event": "DispatchRequest(1,1)"
-          }
-        ],
-        "msg": []
-      },
-      {
-        "$type": "daut.UserErrorReport",
-        "monitor": "DispatchReplyCompleteMonitor",
-        "state": "hot(reply to 1)",
-        "eventNr": 3,
-        "event": "DispatchReply(1,1)",
-        "instance": "1",
-        "trace": [
-          {
-            "state": "always",
-            "eventNr": 2,
-            "event": "DispatchRequest(1,1)"
-          },
-          {
-            "state": "hot(reply to 1)",
-            "eventNr": 3,
-            "event": "DispatchReply(1,1)"
-          }
-        ],
-        "msg": "We saw a reply for 1/1"
-      }
-    ],
-    "3": [
-      {
-        "$type": "daut.UserErrorReport",
-        "monitor": "DispatchReplyCompleteMonitor",
-        "state": "hot(reply to 3)",
-        "eventNr": 6,
-        "event": "DispatchReply(1,3)",
-        "instance": "3",
-        "trace": [
-          {
-            "state": "always",
-            "eventNr": 5,
-            "event": "DispatchRequest(1,3)"
-          },
-          {
-            "state": "hot(reply to 3)",
-            "eventNr": 6,
-            "event": "DispatchReply(1,3)"
-          }
-        ],
-        "msg": "We saw a reply for 1/3"
-      },
-      {
-        "$type": "daut.OmissionErrorReport",
-        "monitor": "DispatchReplyCompleteMonitor",
-        "state": "hot(complete 3)",
-        "instance": "3",
-        "trace": [
-          {
-            "state": "always",
-            "eventNr": 5,
-            "event": "DispatchRequest(1,3)"
-          },
-          {
-            "state": "hot(reply to 3)",
-            "eventNr": 6,
-            "event": "DispatchReply(1,3)"
-          }
-        ]
-      }
-    ]
-  },
-  "Monitors": {},
-  "MonotonicMonitor": {
-    "1": [
-      {
-        "$type": "daut.TransitionErrorReport",
-        "monitor": "MonotonicMonitor",
-        "state": "watch(1 seen, next should be 2)",
-        "eventNr": 2,
-        "event": "DispatchRequest(1,1)",
-        "instance": "1",
-        "trace": [
-          {
-            "state": "always",
-            "eventNr": 1,
-            "event": "DispatchRequest(1,1)"
-          },
-          {
-            "state": "watch(1 seen, next should be 2)",
-            "eventNr": 2,
-            "event": "DispatchRequest(1,1)"
-          }
-        ],
-        "msg": []
-      },
-      {
-        "$type": "daut.TransitionErrorReport",
-        "monitor": "MonotonicMonitor",
-        "state": "watch(1 seen, next should be 2)",
+        "$type": "daut.TransitionOkReport",
+        "monitor": "DispatchCompletePast",
+        "state": "Dispatched(1000,cmd1,1).hot",
         "eventNr": 5,
-        "event": "DispatchRequest(1,3)",
-        "instance": "1",
+        "event": "Cancel(3000,cmd1,1)",
+        "instance": "N/A",
         "trace": [
           {
             "state": "always",
-            "eventNr": 2,
-            "event": "DispatchRequest(1,1)"
+            "eventNr": 1,
+            "event": "Dispatch(1000,cmd1,1)"
           },
           {
-            "state": "watch(1 seen, next should be 2)",
+            "state": "Dispatched(1000,cmd1,1).hot",
             "eventNr": 5,
-            "event": "DispatchRequest(1,3)"
+            "event": "Cancel(3000,cmd1,1)"
           }
         ],
         "msg": []
+      },
+      {
+        "$type": "daut.TransitionReport",
+        "monitor": "DispatchCompletePast",
+        "state": "Dispatched(1000,cmd1,1).hot",
+        "eventNr": 5,
+        "event": "Cancel(3000,cmd1,1)",
+        "instance": "N/A"
+      },
+      {
+        "$type": "daut.TransitionErrorReport",
+        "monitor": "DispatchCompletePast",
+        "state": "always",
+        "eventNr": 6,
+        "event": "Log(cmd1(1) cancelled)",
+        "instance": "N/A",
+        "trace": [
+          {
+            "state": "always",
+            "eventNr": 6,
+            "event": "Log(cmd1(1) cancelled)"
+          }
+        ],
+        "msg": []
+      },
+      {
+        "$type": "daut.TransitionReport",
+        "monitor": "DispatchCompletePast",
+        "state": "Dispatched(2000,cmd2,2).hot",
+        "eventNr": 7,
+        "event": "Complete(4000,cmd2,2)",
+        "instance": "N/A"
       }
     ]
   }

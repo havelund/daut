@@ -576,7 +576,7 @@ class Monitor[E] {
         sourceState(event) match {
           case None =>
           case Some(targetStates) =>
-            if (DautOptions.SHOW_TRANSITIONS) {
+            if ((thisMonitor.SHOW_TRANSITIONS || DautOptions.SHOW_TRANSITIONS) && !(sourceState.isSilenced || thisMonitor.isSilenced)) { 
               reportTransition(sourceState, event)
             }
             transitionTriggered = true
@@ -826,7 +826,63 @@ class Monitor[E] {
     }
     this
   }
+  
+  /**
+    * Option, which when set to true will cause events to be printed that trigger ok transitions in this monitor.
+    * Default value is false.
+    */
 
+  var RECORD_OK_TRANSITIONS: Boolean = false
+
+  /**
+    * When called with `flag` being true, events that trigger ok transitions in this monitor,
+    * and all sub monitors, will be automatically printed.
+    *
+    * @param flag when true events will be printed. If this method is not called with `flag`
+    *             being true, then no events will be printed automatically.
+    * @return the current monitor, allowing for method chaining.
+    */
+
+  def recordOkTransitions(flag: Boolean = true): Monitor[E] = {
+    RECORD_OK_TRANSITIONS = flag
+    for (monitor <- monitors) {
+      monitor.recordOkTransitions(flag)
+    }
+    this
+  }
+  
+  /**
+    * When this variable is true, logging of transitions in this monitor are silenced (not shown).
+    * Specifically, even if `DautOptions.SHOW_TRANSITIONS` is true, transitions in this monitor are
+    * not shown. Similarly, even if `DautOptions.REPORT_OK_TRANSITIONS` is true, ok transitions
+    * in this monitor are not shown.
+    */
+
+  private var silenced: Boolean = false
+
+  /**
+    * Calling this method will cause logging of transitions in this monitor to be silenced (not shown).
+    * Specifically, even if `DautOptions.SHOW_TRANSITIONS` is true, transitions in this monitor are
+    * not shown. Similarly, even if `DautOptions.REPORT_OK_TRANSITIONS` is true, ok transitions
+    * in this monitor are not shown.
+    *
+    * @return the same state.
+    */
+
+  def silence(): this.type = {
+    silenced = true
+    this
+  }
+
+  /**
+    * Returns true if the monitor has been silenced.
+    *
+    * @return true if the monitor has been silenced.
+    */
+
+  private[daut] def isSilenced: Boolean =
+    silenced
+  
   /**
     * Launches the monitors provided as var-argument as sub-monitors of this monitor.
     * Being a sub-monitor has no special semantics, it is just a way of grouping
@@ -1035,12 +1091,39 @@ class Monitor[E] {
       */
 
     private[daut] var isFinal: Boolean = true
-
+    
     /**
-      * Each state is associated with a trace of events, each of which caused
-      * a transition in some state to trigger, transitively leading to this state.
+      * When this variable is true, logging of transitions out of this state are silenced (not shown).
+      * Specifically, even if `DautOptions.SHOW_TRANSITIONS` is true, transitions out of this state are
+      * not shown. Similarly, even if `DautOptions.REPORT_OK_TRANSITIONS` is true, ok transitions
+      * in this state are not shown.
       */
 
+    private var silenced: Boolean = false
+
+    /**
+      * Calling this method will cause logging of transitions out of this state to be silenced (not shown).
+      * Specifically, even if `DautOptions.SHOW_TRANSITIONS` is true, transitions out of this state are
+      * not shown. Similarly, even if `DautOptions.REPORT_OK_TRANSITIONS` is true, ok transitions
+      * in this state are not shown.
+      *
+      * @return the same state.
+      */
+
+    infix def silence(): this.type = {
+      silenced = true
+      this
+    }
+
+    /**
+      * Returns true if the state has been silenced.
+      *
+      * @return true if the state has been silenced.
+      */
+
+    private[daut] def isSilenced: Boolean =
+      silenced
+    
     /**
       * The optional instance of a state. This is an id pointed out by the user
       * for betting understanding output from Daut.
@@ -1079,6 +1162,11 @@ class Monitor[E] {
         case Some(id) => id.toString
       }
     }
+
+    /**
+      * Each state is associated with a trace of events, each of which caused
+      * a transition in some state to trigger, transitively leading to this state.
+      */
 
     var trace: List[TraceEvent] = List()
 
@@ -1380,7 +1468,7 @@ class Monitor[E] {
             case `stay` =>
             case `error` => reportTransitionError(this, event, newTrace, error.message)
             case `ok` =>
-              if (DautOptions.REPORT_OK_TRANSITIONS) {
+              if ((thisMonitor.RECORD_OK_TRANSITIONS || DautOptions.REPORT_OK_TRANSITIONS) && !(thisState.isSilenced || thisMonitor.isSilenced)) { 
                 reportTransitionOk(this, event, newTrace, ok.message)
               }
             case ns =>

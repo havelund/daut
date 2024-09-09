@@ -1345,7 +1345,9 @@ object Main {
 
 ## Options
 
-Daut offers three option variables that can be set:
+#### DautOptions
+
+Daut offers static option variables in the `DautOptions` object that can be set:
 
 - `DautOptions.DEBUG: Boolean` (static variable): when set to true, causes each 
 monitor step to be printed, including event and resulting set of states. Default is false.
@@ -1364,10 +1366,6 @@ monitor step to be printed, including event and resulting set of states. Default
 
 - `DautOptions.RESULT_FILE: String`: the name of the json file into which the result of a monitoring session will be written when the `end()` method is called. The default value is `daut-results.json`.
 
-- `Monitor.STOP_ON_ERROR: Boolean`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
-
-
-
 These options can be set as shown in the following example:
 
 ```scala
@@ -1376,6 +1374,51 @@ DautOptions.PRINT_ERROR_BANNER = false
 val m = MyMonitor()
 m.STOP_ON_ERROR = true
 ...
+```
+
+#### Specific Monitor Options
+
+A specific monitor instance also has options:
+
+- `REPORT_OK_TRANSITIONS: Boolean` (static variable): when set to true, every transition leading to `ok` (success) in the monitor will be reported. Default is false. Transitions will be printed out in color with different colors chosen for different monitors (in a circular manner since the number of colors is limited).
+
+- `SHOW_TRANSITIONS: Boolean` (static variable): when set to true, events that trigger transitions in the monitor are shown. Default is false.
+
+- STOP_ON_ERROR: Boolean`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
+
+the transition looging can also be controlled with the following methods which set the flag recursively down to sub monitors.
+
+```scala
+def recordOkTransitions(flag: Boolean = true): Monitor[E]
+def showTransitions(flag: Boolean = true): Monitor[E]
+```
+
+#### Limiting Transition and ok-transition Recordings
+
+When using the options `REPORT_OK_TRANSITIONS' or `SHOW_TRANSITIONS` in `DautOptions` or in a monitor instance a loot of logging reports may be generated. One can cut down on these reports by invoking the: 
+
+```scala
+def silence(): this.type
+```
+
+method, either on a monitor as a whole or on a state specifically. This will cause such looging not to occur in that monitor or that state. Some examples. To silence a monitor:
+
+```scala
+class DispatchComplete extends Monitor[Event]:
+  silence() # silence monitor
+  always:
+    case Dispatch(time, cmd, nr) =>
+      ...
+```
+
+To silence a state:
+
+```scala
+class DispatchComplete extends Monitor[Event]:
+  always:
+    case Dispatch(time, cmd, nr) =>
+      ... 
+  .silence() # silence the always state
 ```
 
 ## Labeling of Anonymous States for Debugging Purposes
