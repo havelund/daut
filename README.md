@@ -1395,13 +1395,15 @@ def showTransitions(flag: Boolean = true): Monitor[E]
 
 #### Limiting Transition and ok-transition Recordings
 
-When using the options `REPORT_OK_TRANSITIONS' or `SHOW_TRANSITIONS` in `DautOptions` or in a monitor instance a loot of logging reports may be generated. One can cut down on these reports by invoking the: 
+When using the options `REPORT_OK_TRANSITIONS` or `SHOW_TRANSITIONS` in `DautOptions` or in a monitor instance a lot of logging reports may be generated. One can cut down on these reports by invoking the: 
 
 ```scala
 def silence(): this.type
 ```
 
-method, either on a monitor as a whole or on a state specifically. This will cause such looging not to occur in that monitor or that state. Some examples. To silence a monitor:
+method, either on a monitor as a whole or on a state specifically. This will cause such looging not to occur in that monitor or that state. Some examples below. 
+
+To silence a whole monitor:
 
 ```scala
 class DispatchComplete extends Monitor[Event]:
