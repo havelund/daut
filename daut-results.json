@@ -1,58 +1,23 @@
 {
-  "DispatchCompletePast": {
-    "N/A": [
+  "InitialDownlinkRateReactor": {
+    "Set initial downlink speed to 10 B/s": [
       {
         "$type": "daut.TransitionOkReport",
-        "monitor": "DispatchCompletePast",
-        "state": "Dispatched(1000,cmd1,1).hot",
-        "eventNr": 5,
-        "event": "Cancel(3000,cmd1,1)",
-        "instance": "N/A",
+        "monitor": "InitialDownlinkRateReactor",
+        "state": "hot(Waiting for file downlink telemetry to set the downlink rate)",
+        "eventNr": 1,
+        "event": "FileDownlinkTlm(10,20)",
+        "instance": "Set initial downlink speed to 10 B/s",
         "trace": [
           {
-            "state": "always",
+            "state": "hot(Waiting for file downlink telemetry to set the downlink rate)",
             "eventNr": 1,
-            "event": "Dispatch(1000,cmd1,1)"
-          },
-          {
-            "state": "Dispatched(1000,cmd1,1).hot",
-            "eventNr": 5,
-            "event": "Cancel(3000,cmd1,1)"
+            "event": "FileDownlinkTlm(10,20)"
           }
         ],
-        "msg": []
-      },
-      {
-        "$type": "daut.TransitionReport",
-        "monitor": "DispatchCompletePast",
-        "state": "Dispatched(1000,cmd1,1).hot",
-        "eventNr": 5,
-        "event": "Cancel(3000,cmd1,1)",
-        "instance": "N/A"
-      },
-      {
-        "$type": "daut.TransitionErrorReport",
-        "monitor": "DispatchCompletePast",
-        "state": "always",
-        "eventNr": 6,
-        "event": "Log(cmd1(1) cancelled)",
-        "instance": "N/A",
-        "trace": [
-          {
-            "state": "always",
-            "eventNr": 6,
-            "event": "Log(cmd1(1) cancelled)"
-          }
-        ],
-        "msg": []
-      },
-      {
-        "$type": "daut.TransitionReport",
-        "monitor": "DispatchCompletePast",
-        "state": "Dispatched(2000,cmd2,2).hot",
-        "eventNr": 7,
-        "event": "Complete(4000,cmd2,2)",
-        "instance": "N/A"
+        "msg": [
+          "json\n{ \"where\": \"InitialDownlinkRateReactor\",\n  \"rate(B/s)\": 10\n}\n          "
+        ]
       }
     ]
   }

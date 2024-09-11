@@ -1461,7 +1461,10 @@ class Monitor[E] {
       if (transitions.isDefinedAt(event)) {
         val newTrace = trace :+ TraceEvent(this.getName, Monitor.eventNumber, event.toString) 
         context.currentState = this 
-        context.currentTrace = newTrace 
+        context.currentTrace = newTrace
+        if (instanceId.isEmpty && isInitial && !label.startsWith("always")) {
+          instanceId = instanceOf(event)
+        }
         val newStates = transitions(event)
         for (ns <- newStates) {
           ns match {
@@ -2357,7 +2360,7 @@ class Monitor[E] {
       )
     }
 
-    implicit val traveEventRW: ReadWriter[TraceEvent] = macroRW[TraceEvent]
+    implicit val traceEventRW: ReadWriter[TraceEvent] = macroRW[TraceEvent]
     implicit val reportRW: ReadWriter[Report] = ReadWriter.merge(
       macroRW[TransitionReport],
       macroRW[TransitionErrorReport],
