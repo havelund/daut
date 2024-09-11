@@ -1462,9 +1462,6 @@ class Monitor[E] {
         val newTrace = trace :+ TraceEvent(this.getName, Monitor.eventNumber, event.toString) 
         context.currentState = this 
         context.currentTrace = newTrace
-        if (instanceId.isEmpty && isInitial && !label.startsWith("always")) {
-          instanceId = instanceOf(event)
-        }
         val newStates = transitions(event)
         for (ns <- newStates) {
           ns match {
@@ -2587,7 +2584,26 @@ class Monitor[E] {
 
   def getLatestReports: List[Report] =
     reportsFromLastEvent ++ getAllSubAbsMonitors.flatMap(_.getLatestReportsForThisMonitor)
+  
+  /**
+    * Returns the string value of the instanceId from the state if defined, otherwise the instanceId from the event.
+    *
+    * @param st    the state.
+    * @param event the event.
+    * @return the the string value of the instanceId.
+    */
 
+  def getInstanceIdStringFromStateOrEvent(st: state, event: E): String = {
+    if (!st.getInstanceId.isEmpty) {
+      st.getInstanceIdString
+    } else {
+      instanceOf(event) match {
+        case None => "N/A"
+        case Some(id) => id.toString
+      }
+    }
+  }
+  
   /**
     * Reports a transition error.
     *
@@ -2597,12 +2613,13 @@ class Monitor[E] {
     *              triggered transitions leading to this state.
     * @param msg   a user provided optional message.
     */
-
+    
   protected def reportTransitionError(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
-    val report = TransitionErrorReport(monitorName, st.getName, Monitor.eventNumber, event.toString, st.getInstanceIdString, trace, msg)
+    val instanceIdString = getInstanceIdStringFromStateOrEvent(st, event)
+    val report = TransitionErrorReport(monitorName, st.getName, Monitor.eventNumber, event.toString, instanceIdString, trace, msg)
     createErrorReport(report)
   }
-
+  
   /**
     * Reports an omission error, when `end()` is called in a `hot` or `next` state.
     *
@@ -2676,13 +2693,14 @@ class Monitor[E] {
     *              triggered transitions leading to this state.
     * @param msg   a user provided optional message.
     */
-
+    
   protected def reportTransitionOk(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
-    val report = TransitionOkReport(monitorName, st.getName, Monitor.eventNumber, event.toString, st.getInstanceIdString, trace, msg)
+    val instanceIdString = getInstanceIdStringFromStateOrEvent(st, event)
+    val report = TransitionOkReport(monitorName, st.getName, Monitor.eventNumber, event.toString, instanceIdString, trace, msg)
     println(s"\n$report")
     addReport(report)
   }
-
+  
   /**
     * Reports that a transition has taken place, caused by an event in a given state.
     * The method is only called when `DautOptions.SHOW_TRANSITIONS` is true.
@@ -2690,17 +2708,14 @@ class Monitor[E] {
     * @param st    the state in which the transition takes place.
     * @param event the triggering event causing the transition.
     */
-
+    
   protected def reportTransition(st: state, event: E): Unit = {
     val shownEvent = renderEventAs(event) match {
       case None => event.toString
       case Some(s) => s
     }
-    val instanceId = instanceOf(event) match {
-      case None => st.getInstanceIdString
-      case Some(id) => id.toString
-    }
-    val report = TransitionReport(monitorName, st.getName, Monitor.eventNumber, shownEvent, instanceId)
+    val instanceIdString = getInstanceIdStringFromStateOrEvent(st, event)
+    val report = TransitionReport(monitorName, st.getName, Monitor.eventNumber, shownEvent, instanceIdString)
     val coloredReport = Monitor.eventColoring.colorString(monitorName, report.toString)
     println(coloredReport)
     addReport(report)

@@ -4,20 +4,54 @@
       {
         "$type": "daut.TransitionOkReport",
         "monitor": "InitialDownlinkRateReactor",
-        "state": "hot(Waiting for file downlink telemetry to set the downlink rate)",
+        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
         "eventNr": 1,
-        "event": "FileDownlinkTlm(10,20)",
+        "event": "FileDownlinkTlm(10,100)",
         "instance": "Set initial downlink speed to 10 B/s",
         "trace": [
           {
-            "state": "hot(Waiting for file downlink telemetry to set the downlink rate)",
+            "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
             "eventNr": 1,
-            "event": "FileDownlinkTlm(10,20)"
+            "event": "FileDownlinkTlm(10,100)"
           }
         ],
         "msg": [
           "json\n{ \"where\": \"InitialDownlinkRateReactor\",\n  \"rate(B/s)\": 10\n}\n          "
         ]
+      },
+      {
+        "$type": "daut.TransitionReport",
+        "monitor": "InitialDownlinkRateReactor",
+        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
+        "eventNr": 1,
+        "event": "FileDownlinkTlm(10,100)",
+        "instance": "Set initial downlink speed to 10 B/s"
+      },
+      {
+        "$type": "daut.TransitionOkReport",
+        "monitor": "InitialDownlinkRateReactor",
+        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
+        "eventNr": 2,
+        "event": "FileDownlinkTlm(20,200)",
+        "instance": "Set initial downlink speed to 10 B/s",
+        "trace": [
+          {
+            "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
+            "eventNr": 2,
+            "event": "FileDownlinkTlm(20,200)"
+          }
+        ],
+        "msg": [
+          "json\n{ \"where\": \"InitialDownlinkRateReactor\",\n  \"rate(B/s)\": 10\n}\n          "
+        ]
+      },
+      {
+        "$type": "daut.TransitionReport",
+        "monitor": "InitialDownlinkRateReactor",
+        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
+        "eventNr": 2,
+        "event": "FileDownlinkTlm(20,200)",
+        "instance": "Set initial downlink speed to 10 B/s"
       }
     ]
   }
