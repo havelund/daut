@@ -8,8 +8,10 @@ import scala.language.{implicitConversions, reflectiveCalls}
 import java.io.{BufferedWriter, FileWriter, PrintWriter}
 import scala.sys.exit
 import scala.reflect.Selectable.reflectiveSelectable
-import upickle.default.*
-
+import io.circe.syntax._
+import io.circe.{Encoder, Json}
+import io.circe.parser._
+import io.circe.generic.semiauto._
 import scala.collection.immutable.ListMap
 import scala.compiletime.uninitialized
 
@@ -441,7 +443,7 @@ class Monitor[E] {
     */
 
   case class ID(id: Any)
-  
+
   /**
     * Stores the current dynamic context, including the currently processed event,
     * the current state that this event is being submitted to, and the current
@@ -576,7 +578,7 @@ class Monitor[E] {
         sourceState(event) match {
           case None =>
           case Some(targetStates) =>
-            if ((thisMonitor.SHOW_TRANSITIONS || DautOptions.SHOW_TRANSITIONS) && !(sourceState.isSilenced || thisMonitor.isSilenced)) { 
+            if ((thisMonitor.SHOW_TRANSITIONS || DautOptions.SHOW_TRANSITIONS) && !(sourceState.isSilenced || thisMonitor.isSilenced)) {
               reportTransition(sourceState, event)
             }
             transitionTriggered = true
@@ -695,13 +697,13 @@ class Monitor[E] {
     */
 
   private var invariants: List[(String, Unit => Boolean)] = Nil
-  
+
   /**
     * The current context.
     */
 
   private var context: Context = Context()
-  
+
   /**
     * A monitor's body consists of a sequence of state declarations. The very first state
     * will become the initial state. This variable is used to keep track of when this
@@ -791,7 +793,7 @@ class Monitor[E] {
       context.currentEvent.toString,
       context.currentState.getInstanceIdString,
       context.currentTrace,
-      message) 
+      message)
     addReport(report)
   }
 
@@ -826,7 +828,7 @@ class Monitor[E] {
     }
     this
   }
-  
+
   /**
     * Option, which when set to true will cause events to be printed that trigger ok transitions in this monitor.
     * Default value is false.
@@ -850,7 +852,7 @@ class Monitor[E] {
     }
     this
   }
-  
+
   /**
     * When this variable is true, logging of transitions in this monitor are silenced (not shown).
     * Specifically, even if `DautOptions.SHOW_TRANSITIONS` is true, transitions in this monitor are
@@ -882,7 +884,7 @@ class Monitor[E] {
 
   private[daut] def isSilenced: Boolean =
     silenced
-  
+
   /**
     * Launches the monitors provided as var-argument as sub-monitors of this monitor.
     * Being a sub-monitor has no special semantics, it is just a way of grouping
@@ -1021,7 +1023,7 @@ class Monitor[E] {
     */
 
   def getAllSubAbsMonitors: List[Monitor[?]] = {
-    var result: ListSet[Monitor[?]] = ListSet(monitors *) ++ ListSet(abstractMonitors*)
+    var result: ListSet[Monitor[?]] = ListSet(monitors *) ++ ListSet(abstractMonitors *)
     result = result ++ monitors.flatMap(_.getAllSubAbsMonitors) ++ abstractMonitors.flatMap(_.getAllSubAbsMonitors)
     result.toList
   }
@@ -1091,7 +1093,7 @@ class Monitor[E] {
       */
 
     private[daut] var isFinal: Boolean = true
-    
+
     /**
       * When this variable is true, logging of transitions out of this state are silenced (not shown).
       * Specifically, even if `DautOptions.SHOW_TRANSITIONS` is true, transitions out of this state are
@@ -1123,7 +1125,7 @@ class Monitor[E] {
 
     private[daut] def isSilenced: Boolean =
       silenced
-    
+
     /**
       * The optional instance of a state. This is an id pointed out by the user
       * for betting understanding output from Daut.
@@ -1459,8 +1461,8 @@ class Monitor[E] {
 
     def apply(event: E): Option[Set[state]] =
       if (transitions.isDefinedAt(event)) {
-        val newTrace = trace :+ TraceEvent(this.getName, Monitor.eventNumber, event.toString) 
-        context.currentState = this 
+        val newTrace = trace :+ TraceEvent(this.getName, Monitor.eventNumber, event.toString)
+        context.currentState = this
         context.currentTrace = newTrace
         val newStates = transitions(event)
         for (ns <- newStates) {
@@ -1468,7 +1470,7 @@ class Monitor[E] {
             case `stay` =>
             case `error` => reportTransitionError(this, event, newTrace, error.message)
             case `ok` =>
-              if ((thisMonitor.RECORD_OK_TRANSITIONS || DautOptions.REPORT_OK_TRANSITIONS) && !(thisState.isSilenced || thisMonitor.isSilenced)) { 
+              if ((thisMonitor.RECORD_OK_TRANSITIONS || DautOptions.REPORT_OK_TRANSITIONS) && !(thisState.isSilenced || thisMonitor.isSilenced)) {
                 reportTransitionOk(this, event, newTrace, ok.message)
               }
             case ns =>
@@ -2342,35 +2344,83 @@ class Monitor[E] {
     println("-------------------------")
   }
 
+  // Define the encoders explicitly for each case class
+
   /**
-    * Writes the reports resulting from monitoring to a json file.
-    * The file is determined by the `DautOptions.RESULT_FILE` option.
+    * JSON encoders for each case class we want to write in JSON format
+    */
+
+  object Encoders {
+    implicit val traceEventEncoder: Encoder[TraceEvent] = deriveEncoder[TraceEvent]
+    implicit val transitionErrorReportEncoder: Encoder[TransitionErrorReport] = deriveEncoder[TransitionErrorReport]
+    implicit val transitionOkReportEncoder: Encoder[TransitionOkReport] = deriveEncoder[TransitionOkReport]
+    implicit val omissionErrorReportEncoder: Encoder[OmissionErrorReport] = deriveEncoder[OmissionErrorReport]
+    implicit val userErrorReportEncoder: Encoder[UserErrorReport] = deriveEncoder[UserErrorReport]
+    implicit val userReportEncoder: Encoder[UserReport] = deriveEncoder[UserReport]
+    implicit val transitionReportEncoder: Encoder[TransitionReport] = deriveEncoder[TransitionReport]
+  }
+
+  /**
+    * Helper function to encode reports with a "type" field and handle "msg" as JSON if applicable.
+    *
+    * @param report the report to turn into JSON
+    * @return the report in JSON format.
+    */
+
+  def encodeReportWithType(report: Report): Json = {
+    val typeName = report.getClass.getSimpleName.replace("$", "") // Get case class name
+
+    // Match to handle the "msg" field and "type" for specific report types
+
+    report match {
+      case r: TransitionErrorReport =>
+        val msgJson = r.msg.flatMap { msg =>
+          if (msg.startsWith("json")) parse(msg.stripPrefix("json").trim).toOption else Some(Json.fromString(msg))
+        }.getOrElse(Json.Null)
+        r.asJson(Encoders.transitionErrorReportEncoder).deepMerge(Json.obj("type" -> Json.fromString(typeName), "msg" -> msgJson))
+
+      case r: TransitionOkReport =>
+        val msgJson = r.msg.flatMap { msg =>
+          if (msg.startsWith("json")) parse(msg.stripPrefix("json").trim).toOption else Some(Json.fromString(msg))
+        }.getOrElse(Json.Null)
+        r.asJson(Encoders.transitionOkReportEncoder).deepMerge(Json.obj("type" -> Json.fromString(typeName), "msg" -> msgJson))
+
+      case r: UserErrorReport =>
+        r.asJson(Encoders.userErrorReportEncoder).deepMerge(Json.obj("type" -> Json.fromString(typeName)))
+
+      case r: UserReport =>
+        r.asJson(Encoders.userReportEncoder).deepMerge(Json.obj("type" -> Json.fromString(typeName)))
+
+      case r: OmissionErrorReport =>
+        r.asJson(Encoders.omissionErrorReportEncoder).deepMerge(Json.obj("type" -> Json.fromString(typeName)))
+
+      case r: TransitionReport =>
+        r.asJson(Encoders.transitionReportEncoder).deepMerge(Json.obj("type" -> Json.fromString(typeName)))
+    }
+  }
+
+  /**
+    * Function to write reports in JSON format to a file.
     */
 
   private def writeReportToJson(): Unit = {
-    val jsonWriter = new PrintWriter(new BufferedWriter(new FileWriter(DautOptions.RESULT_FILE, false)))
-
-    implicit def listMapRW[K: ReadWriter, V: ReadWriter]: ReadWriter[ListMap[K, V]] = {
-      readwriter[Map[K, V]].bimap[ListMap[K, V]](
-        listMap => listMap.toMap, // Convert ListMap to Map for writing
-        map => ListMap(map.toSeq *) // Convert Map back to ListMap for reading
-      )
-    }
-
-    implicit val traceEventRW: ReadWriter[TraceEvent] = macroRW[TraceEvent]
-    implicit val reportRW: ReadWriter[Report] = ReadWriter.merge(
-      macroRW[TransitionReport],
-      macroRW[TransitionErrorReport],
-      macroRW[TransitionOkReport],
-      macroRW[OmissionErrorReport],
-      macroRW[UserErrorReport],
-      macroRW[UserReport]
+    val filePath = DautOptions.RESULT_FILE
+    val jsonMap = generateJsonMap
+    val jsonObject = Json.obj(
+      jsonMap.map {
+        case (monitor, instanceMap) =>
+          monitor -> Json.obj(
+            instanceMap.map {
+              case (instance, reports) =>
+                instance -> reports.map(encodeReportWithType).asJson
+            }.toSeq*
+          )
+      }.toSeq*
     )
 
-    val jsonMap = generateJsonMap
-    val jsonObject: String = write(jsonMap, indent = 2)
-    jsonWriter.write(jsonObject)
-    jsonWriter.close()
+    val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath, false)))
+    writer.write(jsonObject.spaces2)
+    writer.close()
   }
 
   /**
@@ -2402,9 +2452,9 @@ class Monitor[E] {
           update(monitor, instance, report)
         case OmissionErrorReport(monitor, state, instance, trace) =>
           update(monitor, instance, report)
-        case UserErrorReport(monitor, state, eventNr, event, instance, trace, msg) => 
-          update(monitor, instance, report) 
-        case UserReport(monitor, state, eventNr, event, instance, trace,  msg) =>
+        case UserErrorReport(monitor, state, eventNr, event, instance, trace, msg) =>
+          update(monitor, instance, report)
+        case UserReport(monitor, state, eventNr, event, instance, trace, msg) =>
           update(monitor, instance, report)
       }
     }
@@ -2584,7 +2634,7 @@ class Monitor[E] {
 
   def getLatestReports: List[Report] =
     reportsFromLastEvent ++ getAllSubAbsMonitors.flatMap(_.getLatestReportsForThisMonitor)
-  
+
   /**
     * Returns the string value of the instanceId from the state if defined, otherwise the instanceId from the event.
     *
@@ -2603,7 +2653,7 @@ class Monitor[E] {
       }
     }
   }
-  
+
   /**
     * Reports a transition error.
     *
@@ -2613,13 +2663,13 @@ class Monitor[E] {
     *              triggered transitions leading to this state.
     * @param msg   a user provided optional message.
     */
-    
+
   protected def reportTransitionError(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
     val instanceIdString = getInstanceIdStringFromStateOrEvent(st, event)
     val report = TransitionErrorReport(monitorName, st.getName, Monitor.eventNumber, event.toString, instanceIdString, trace, msg)
     createErrorReport(report)
   }
-  
+
   /**
     * Reports an omission error, when `end()` is called in a `hot` or `next` state.
     *
@@ -2648,7 +2698,7 @@ class Monitor[E] {
       context.currentEvent.toString,
       context.currentState.getInstanceIdString,
       context.currentTrace,
-      message) 
+      message)
     createErrorReport(report)
   }
 
@@ -2693,14 +2743,14 @@ class Monitor[E] {
     *              triggered transitions leading to this state.
     * @param msg   a user provided optional message.
     */
-    
+
   protected def reportTransitionOk(st: state, event: E, trace: List[TraceEvent], msg: Option[String]): Unit = {
     val instanceIdString = getInstanceIdStringFromStateOrEvent(st, event)
     val report = TransitionOkReport(monitorName, st.getName, Monitor.eventNumber, event.toString, instanceIdString, trace, msg)
     println(s"\n$report")
     addReport(report)
   }
-  
+
   /**
     * Reports that a transition has taken place, caused by an event in a given state.
     * The method is only called when `DautOptions.SHOW_TRANSITIONS` is true.
@@ -2708,7 +2758,7 @@ class Monitor[E] {
     * @param st    the state in which the transition takes place.
     * @param event the triggering event causing the transition.
     */
-    
+
   protected def reportTransition(st: state, event: E): Unit = {
     val shownEvent = renderEventAs(event) match {
       case None => event.toString

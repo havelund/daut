@@ -16,6 +16,12 @@ libraryDependencies += "org.json4s" %% "json4s-ext" % "4.0.6"
 
 libraryDependencies += "com.lihaoyi" %% "upickle" % "3.3.1"
 
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core" % "0.14.3",
+  "io.circe" %% "circe-generic" % "0.14.3",
+  "io.circe" %% "circe-parser" % "0.14.3"
+)
+
 // ---
 
 libraryDependencies ++= Seq(

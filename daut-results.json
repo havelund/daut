@@ -1,57 +1,51 @@
 {
-  "InitialDownlinkRateReactor": {
-    "Set initial downlink speed to 10 B/s": [
+  "DispatchComplete" : {
+    "cmd1" : [
       {
-        "$type": "daut.TransitionOkReport",
-        "monitor": "InitialDownlinkRateReactor",
-        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
-        "eventNr": 1,
-        "event": "FileDownlinkTlm(10,100)",
-        "instance": "Set initial downlink speed to 10 B/s",
-        "trace": [
+        "type" : "TransitionErrorReport",
+        "msg" : {
+          "command" : "cmd1",
+          "nr" : 1,
+          "advice" : "find a good task"
+        },
+        "monitor" : "DispatchComplete",
+        "state" : "hot",
+        "eventNr" : 2,
+        "event" : "Dispatch(2000,cmd1,1)",
+        "instance" : "cmd1",
+        "trace" : [
           {
-            "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
-            "eventNr": 1,
-            "event": "FileDownlinkTlm(10,100)"
+            "state" : "always",
+            "eventNr" : 1,
+            "event" : "Dispatch(1000,cmd1,1)"
+          },
+          {
+            "state" : "hot",
+            "eventNr" : 2,
+            "event" : "Dispatch(2000,cmd1,1)"
           }
-        ],
-        "msg": [
-          "json\n{ \"where\": \"InitialDownlinkRateReactor\",\n  \"rate(B/s)\": 10\n}\n          "
         ]
       },
       {
-        "$type": "daut.TransitionReport",
-        "monitor": "InitialDownlinkRateReactor",
-        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
-        "eventNr": 1,
-        "event": "FileDownlinkTlm(10,100)",
-        "instance": "Set initial downlink speed to 10 B/s"
-      },
-      {
-        "$type": "daut.TransitionOkReport",
-        "monitor": "InitialDownlinkRateReactor",
-        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
-        "eventNr": 2,
-        "event": "FileDownlinkTlm(20,200)",
-        "instance": "Set initial downlink speed to 10 B/s",
-        "trace": [
+        "type" : "TransitionOkReport",
+        "msg" : "cmd1 1 cancelled",
+        "monitor" : "DispatchComplete",
+        "state" : "hot",
+        "eventNr" : 3,
+        "event" : "Cancel(3000,cmd1,1)",
+        "instance" : "cmd1",
+        "trace" : [
           {
-            "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
-            "eventNr": 2,
-            "event": "FileDownlinkTlm(20,200)"
+            "state" : "always",
+            "eventNr" : 2,
+            "event" : "Dispatch(2000,cmd1,1)"
+          },
+          {
+            "state" : "hot",
+            "eventNr" : 3,
+            "event" : "Cancel(3000,cmd1,1)"
           }
-        ],
-        "msg": [
-          "json\n{ \"where\": \"InitialDownlinkRateReactor\",\n  \"rate(B/s)\": 10\n}\n          "
         ]
-      },
-      {
-        "$type": "daut.TransitionReport",
-        "monitor": "InitialDownlinkRateReactor",
-        "state": "always(Waiting for file downlink telemetry to set the downlink rate)",
-        "eventNr": 2,
-        "event": "FileDownlinkTlm(20,200)",
-        "instance": "Set initial downlink speed to 10 B/s"
       }
     ]
   }

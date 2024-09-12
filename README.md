@@ -228,6 +228,19 @@ event, where the `x` is the same as was previously acquired (caused by the quote
      
 event, where the thread `t` and the lock `t` are the same as in the original acquisition. In the first case the transition returns the `error` state, and in the second case the transition returns the `ok` state. An `ok` means that we are done monitoring that particular path in the monitor. 
 
+`ok` and `error` can alsl be "called" with a string argument as in:
+
+```scala
+class AcquireRelease extends Monitor[LockEvent] {
+  always {
+    case acquire(t, x) =>
+      hot {
+        case acquire(_,`x`) => error(s"double acquire of $x")
+        case release(`t`,`x`) => ok(s"successful realse of $x by $s")
+      }
+  }
+}
+
 #### Applying the Monitor
 
 We can now apply the monitor, as for example in the following main program:
@@ -1998,6 +2011,35 @@ This file is shown below. It represents a map from monitor names to instance map
 }
 
 ```
+
+#### JSON Messages as Arguments to `ok` and `error`
+
+It is possible when indicating an `ok` or `error` to pass a JSON message: a
+string that starts with "json" and then is followed by a JSON object. This is shown below
+for the `error` call.
+
+```scala
+class DispatchReplyCompleteMonitor extends CommandMonitor {
+  always {
+    case DispatchRequest(taskId, cmdNum) =>
+      hot(s"reply to $cmdNum") {
+        case DispatchRequest(`taskId`, `cmdNum`) => 
+          error(s"""json
+          { "taskId": $taskId,
+            "cmdNr": $cmdNr
+          """)
+        case DispatchReply(`taskId`, `cmdNum`) =>
+          hot(s"complete $cmdNum") {
+            case CommandCompleted(`taskId`, `cmdNum`) => ok
+          }
+      }
+  }
+}
+```
+
+This will then be stored in the JSON file of reports as a JSON object. If just a normal
+text message is passed it will be stored as such. If no message is passed it will be
+stored as JSON's `null`.
 
 #### Other Ways of Indicating Instance Ids
 
