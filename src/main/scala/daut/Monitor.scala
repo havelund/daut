@@ -49,17 +49,17 @@ object DautOptions {
   var SHOW_TRANSITIONS: Boolean = false
 
   /**
+    * The name of the json file into which the result of a monitoring is written.
+    */
+
+  var RESULT_FILE: String = "daut-results.json"
+
+  /**
     * When true will cause a big ERROR banner to be printed
     * on standard out upon detection of a specification violation, making it easier
     * to quickly see that an error occurred amongst other large output.
     * The default value is false.
     */
-
-  /**
-    * The name of the json file into which the result of a monitoring is written.
-    */
-
-  var RESULT_FILE: String = "daut-results.json"
 
   var PRINT_ERROR_BANNER: Boolean = false
 
@@ -118,6 +118,15 @@ object Util {
       println(s"*** Monitor is not wellformed: $msg")
       exit(0)
     }
+  }
+
+  /**
+    * Stops execution of Daut prematurely.
+    */
+
+  def stopExecution(msg: String = ""): Unit = {
+    println(s"*** Daut stops prematurely $msg")
+    exit(0)
   }
 }
 
@@ -776,6 +785,7 @@ class Monitor[E] {
   def addReport(report: Report): Unit = {
     reportsFromLastEvent = reportsFromLastEvent :+ report
     reports = reports :+ report
+    Monitor.writeOnlineFile(encodeReportWithType(report))
   }
 
   /**
@@ -2885,6 +2895,60 @@ object Monitor {
     */
 
   var transitionTriggeredInSomeMonitor: Boolean = false
+
+  /**
+    * Name of online jsonl file
+    */
+
+  private var onlineFileName: String = null
+
+  /**
+    * File writer object for opened jsonl file for online writing of reports.
+    */
+
+  private var onlineFileWriter: BufferedWriter = null
+
+  /**
+    * Opens a jsonl file for writing result reports online as monitoring progresses.
+    * This file can then be piped into another application for further processing.
+    *
+    * @param fileName the jsonl file to write to.
+    */
+
+  def openOnlineFile(fileName: String): Unit = {
+    if (!fileName.endsWith(".jsonl")) {
+      stopExecution(s"File $fileName does not end with .jsonl")
+    }
+    try {
+      onlineFileName = fileName
+      onlineFileWriter = new BufferedWriter(new FileWriter(fileName, false))
+    } catch {
+      case e: java.io.IOException =>
+        stopExecution(s"An error occurred while trying to open the file $fileName: ${e.getMessage}")
+      case e: Exception =>
+        stopExecution(s"An unexpected error occurred: ${e.getMessage}")
+    }
+  }
+
+  /**
+    * Write a json report to the online jsonl file, if it has been opened.
+    *
+    * @param json the json object to write.
+    */
+
+  def writeOnlineFile(json: Json) : Unit = {
+    if (onlineFileWriter != null) {
+      try {
+        onlineFileWriter.write(json.noSpaces)
+        onlineFileWriter.newLine()
+        onlineFileWriter.flush()
+      } catch {
+        case e: Exception =>
+          println(s"An unexpected error when writing to online file $onlineFileName: ${e.getMessage}")
+          stopExecution()
+      }
+    }
+  }
 }
 
 /**

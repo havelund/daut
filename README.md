@@ -1397,9 +1397,14 @@ A specific monitor instance also has options:
 
 - `SHOW_TRANSITIONS: Boolean` (static variable): when set to true, events that trigger transitions in the monitor are shown. Default is false.
 
-- STOP_ON_ERROR: Boolean`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
+- `STOP_ON_ERROR: Boolean`: when set to true an error will case the monitor to stop. Default is false. This option is local to each monitor.
 
-the transition looging can also be controlled with the following methods which set the flag recursively down to sub monitors.
+- `def openOnlineFile(fileName: String): Unit` With this method one can open a jsonl file
+  for online writing of reports (the same stored in the permanent json file). These
+  will be written one json object per line, as they are generated during monitoring. This
+  file can then be read on-the-fly by some other application.
+
+the transition logging can also be controlled with the following methods which set the flag recursively down to sub monitors.
 
 ```scala
 def recordOkTransitions(flag: Boolean = true): Monitor[E]

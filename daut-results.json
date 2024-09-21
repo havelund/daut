@@ -1,51 +1,328 @@
 {
-  "DispatchComplete" : {
-    "cmd1" : [
+  "LockAcquireRelease" : {
+    "10" : [
       {
-        "type" : "TransitionErrorReport",
-        "msg" : {
-          "command" : "cmd1",
-          "nr" : 1,
-          "advice" : "find a good task"
-        },
-        "monitor" : "DispatchComplete",
-        "state" : "hot",
-        "eventNr" : 2,
-        "event" : "Dispatch(2000,cmd1,1)",
-        "instance" : "cmd1",
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "always",
+        "eventNr" : 1,
+        "event" : "acquire(1,10)",
+        "instance" : "10"
+      },
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(1,10).hot",
+        "eventNr" : 5,
+        "event" : "release(1,10)",
+        "instance" : "10",
         "trace" : [
           {
             "state" : "always",
             "eventNr" : 1,
-            "event" : "Dispatch(1000,cmd1,1)"
+            "event" : "acquire(1,10)"
           },
           {
-            "state" : "hot",
-            "eventNr" : 2,
-            "event" : "Dispatch(2000,cmd1,1)"
+            "state" : "Locked(1,10).hot",
+            "eventNr" : 5,
+            "event" : "release(1,10)"
           }
         ]
       },
       {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(1,10).hot",
+        "eventNr" : 5,
+        "event" : "release(1,10)",
+        "instance" : "10"
+      }
+    ],
+    "20" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "always",
+        "eventNr" : 2,
+        "event" : "acquire(2,20)",
+        "instance" : "20"
+      },
+      {
         "type" : "TransitionOkReport",
-        "msg" : "cmd1 1 cancelled",
-        "monitor" : "DispatchComplete",
-        "state" : "hot",
-        "eventNr" : 3,
-        "event" : "Cancel(3000,cmd1,1)",
-        "instance" : "cmd1",
+        "msg" : null,
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(2,20).hot",
+        "eventNr" : 6,
+        "event" : "release(2,20)",
+        "instance" : "20",
         "trace" : [
           {
             "state" : "always",
             "eventNr" : 2,
-            "event" : "Dispatch(2000,cmd1,1)"
+            "event" : "acquire(2,20)"
           },
           {
-            "state" : "hot",
-            "eventNr" : 3,
-            "event" : "Cancel(3000,cmd1,1)"
+            "state" : "Locked(2,20).hot",
+            "eventNr" : 6,
+            "event" : "release(2,20)"
           }
         ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(2,20).hot",
+        "eventNr" : 6,
+        "event" : "release(2,20)",
+        "instance" : "20"
+      }
+    ],
+    "30" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "always",
+        "eventNr" : 3,
+        "event" : "acquire(3,30)",
+        "instance" : "30"
+      },
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(3,30).hot",
+        "eventNr" : 7,
+        "event" : "release(3,30)",
+        "instance" : "30",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 3,
+            "event" : "acquire(3,30)"
+          },
+          {
+            "state" : "Locked(3,30).hot",
+            "eventNr" : 7,
+            "event" : "release(3,30)"
+          }
+        ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(3,30).hot",
+        "eventNr" : 7,
+        "event" : "release(3,30)",
+        "instance" : "30"
+      }
+    ],
+    "40" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "always",
+        "eventNr" : 4,
+        "event" : "acquire(4,40)",
+        "instance" : "40"
+      },
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(4,40).hot",
+        "eventNr" : 8,
+        "event" : "release(4,40)",
+        "instance" : "40",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 4,
+            "event" : "acquire(4,40)"
+          },
+          {
+            "state" : "Locked(4,40).hot",
+            "eventNr" : 8,
+            "event" : "release(4,40)"
+          }
+        ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "LockAcquireRelease",
+        "state" : "Locked(4,40).hot",
+        "eventNr" : 8,
+        "event" : "release(4,40)",
+        "instance" : "40"
+      }
+    ]
+  },
+  "Monitors" : {
+    
+  },
+  "ThreadAcquireRelease" : {
+    "1" : [
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(1),expect)",
+        "eventNr" : 5,
+        "event" : "release(1,10)",
+        "instance" : "1",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 1,
+            "event" : "acquire(1,10)"
+          },
+          {
+            "state" : "hot(ID(1),expect)",
+            "eventNr" : 5,
+            "event" : "release(1,10)"
+          }
+        ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(1),expect)",
+        "eventNr" : 5,
+        "event" : "release(1,10)",
+        "instance" : "1"
+      }
+    ],
+    "10" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "always",
+        "eventNr" : 1,
+        "event" : "acquire(1,10)",
+        "instance" : "10"
+      }
+    ],
+    "2" : [
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(2),expect)",
+        "eventNr" : 6,
+        "event" : "release(2,20)",
+        "instance" : "2",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 2,
+            "event" : "acquire(2,20)"
+          },
+          {
+            "state" : "hot(ID(2),expect)",
+            "eventNr" : 6,
+            "event" : "release(2,20)"
+          }
+        ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(2),expect)",
+        "eventNr" : 6,
+        "event" : "release(2,20)",
+        "instance" : "2"
+      }
+    ],
+    "20" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "always",
+        "eventNr" : 2,
+        "event" : "acquire(2,20)",
+        "instance" : "20"
+      }
+    ],
+    "3" : [
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(3),expect)",
+        "eventNr" : 7,
+        "event" : "release(3,30)",
+        "instance" : "3",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 3,
+            "event" : "acquire(3,30)"
+          },
+          {
+            "state" : "hot(ID(3),expect)",
+            "eventNr" : 7,
+            "event" : "release(3,30)"
+          }
+        ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(3),expect)",
+        "eventNr" : 7,
+        "event" : "release(3,30)",
+        "instance" : "3"
+      }
+    ],
+    "30" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "always",
+        "eventNr" : 3,
+        "event" : "acquire(3,30)",
+        "instance" : "30"
+      }
+    ],
+    "4" : [
+      {
+        "type" : "TransitionOkReport",
+        "msg" : null,
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(4),expect)",
+        "eventNr" : 8,
+        "event" : "release(4,40)",
+        "instance" : "4",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 4,
+            "event" : "acquire(4,40)"
+          },
+          {
+            "state" : "hot(ID(4),expect)",
+            "eventNr" : 8,
+            "event" : "release(4,40)"
+          }
+        ]
+      },
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "hot(ID(4),expect)",
+        "eventNr" : 8,
+        "event" : "release(4,40)",
+        "instance" : "4"
+      }
+    ],
+    "40" : [
+      {
+        "type" : "TransitionReport",
+        "monitor" : "ThreadAcquireRelease",
+        "state" : "always",
+        "eventNr" : 4,
+        "event" : "acquire(4,40)",
+        "instance" : "40"
       }
     ]
   }
