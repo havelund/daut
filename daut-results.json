@@ -1,328 +1,143 @@
 {
-  "LockAcquireRelease" : {
-    "10" : [
+  "CompletionMonitor" : {
+    
+  },
+  "DispatchMonitor" : {
+    
+  },
+  "DispatchReplyCompleteMonitor" : {
+    "1" : [
       {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "always",
-        "eventNr" : 1,
-        "event" : "acquire(1,10)",
-        "instance" : "10"
-      },
-      {
-        "type" : "TransitionOkReport",
+        "type" : "TransitionErrorReport",
         "msg" : null,
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(1,10).hot",
-        "eventNr" : 5,
-        "event" : "release(1,10)",
-        "instance" : "10",
+        "monitor" : "DispatchReplyCompleteMonitor",
+        "state" : "hot(reply to 1)",
+        "eventNr" : 2,
+        "event" : "DispatchRequest(1,1)",
+        "instance" : "1",
         "trace" : [
           {
             "state" : "always",
             "eventNr" : 1,
-            "event" : "acquire(1,10)"
+            "event" : "DispatchRequest(1,1)"
           },
           {
-            "state" : "Locked(1,10).hot",
-            "eventNr" : 5,
-            "event" : "release(1,10)"
+            "state" : "hot(reply to 1)",
+            "eventNr" : 2,
+            "event" : "DispatchRequest(1,1)"
           }
         ]
       },
       {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(1,10).hot",
-        "eventNr" : 5,
-        "event" : "release(1,10)",
-        "instance" : "10"
-      }
-    ],
-    "20" : [
-      {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "always",
-        "eventNr" : 2,
-        "event" : "acquire(2,20)",
-        "instance" : "20"
-      },
-      {
-        "type" : "TransitionOkReport",
-        "msg" : null,
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(2,20).hot",
-        "eventNr" : 6,
-        "event" : "release(2,20)",
-        "instance" : "20",
+        "type" : "UserErrorReport",
+        "monitor" : "DispatchReplyCompleteMonitor",
+        "state" : "hot(reply to 1)",
+        "eventNr" : 3,
+        "event" : "DispatchReply(1,1)",
+        "instance" : "1",
         "trace" : [
           {
             "state" : "always",
             "eventNr" : 2,
-            "event" : "acquire(2,20)"
+            "event" : "DispatchRequest(1,1)"
           },
           {
-            "state" : "Locked(2,20).hot",
-            "eventNr" : 6,
-            "event" : "release(2,20)"
-          }
-        ]
-      },
-      {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(2,20).hot",
-        "eventNr" : 6,
-        "event" : "release(2,20)",
-        "instance" : "20"
-      }
-    ],
-    "30" : [
-      {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "always",
-        "eventNr" : 3,
-        "event" : "acquire(3,30)",
-        "instance" : "30"
-      },
-      {
-        "type" : "TransitionOkReport",
-        "msg" : null,
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(3,30).hot",
-        "eventNr" : 7,
-        "event" : "release(3,30)",
-        "instance" : "30",
-        "trace" : [
-          {
-            "state" : "always",
+            "state" : "hot(reply to 1)",
             "eventNr" : 3,
-            "event" : "acquire(3,30)"
-          },
-          {
-            "state" : "Locked(3,30).hot",
-            "eventNr" : 7,
-            "event" : "release(3,30)"
+            "event" : "DispatchReply(1,1)"
           }
-        ]
-      },
-      {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(3,30).hot",
-        "eventNr" : 7,
-        "event" : "release(3,30)",
-        "instance" : "30"
+        ],
+        "msg" : "We saw a reply for 1/1"
       }
     ],
-    "40" : [
+    "3" : [
       {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "always",
-        "eventNr" : 4,
-        "event" : "acquire(4,40)",
-        "instance" : "40"
-      },
-      {
-        "type" : "TransitionOkReport",
-        "msg" : null,
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(4,40).hot",
-        "eventNr" : 8,
-        "event" : "release(4,40)",
-        "instance" : "40",
+        "type" : "UserErrorReport",
+        "monitor" : "DispatchReplyCompleteMonitor",
+        "state" : "hot(reply to 3)",
+        "eventNr" : 6,
+        "event" : "DispatchReply(1,3)",
+        "instance" : "3",
         "trace" : [
           {
             "state" : "always",
-            "eventNr" : 4,
-            "event" : "acquire(4,40)"
+            "eventNr" : 5,
+            "event" : "DispatchRequest(1,3)"
           },
           {
-            "state" : "Locked(4,40).hot",
-            "eventNr" : 8,
-            "event" : "release(4,40)"
+            "state" : "hot(reply to 3)",
+            "eventNr" : 6,
+            "event" : "DispatchReply(1,3)"
           }
-        ]
+        ],
+        "msg" : "We saw a reply for 1/3"
       },
       {
-        "type" : "TransitionReport",
-        "monitor" : "LockAcquireRelease",
-        "state" : "Locked(4,40).hot",
-        "eventNr" : 8,
-        "event" : "release(4,40)",
-        "instance" : "40"
+        "type" : "OmissionErrorReport",
+        "monitor" : "DispatchReplyCompleteMonitor",
+        "state" : "hot(complete 3)",
+        "instance" : "3",
+        "trace" : [
+          {
+            "state" : "always",
+            "eventNr" : 5,
+            "event" : "DispatchRequest(1,3)"
+          },
+          {
+            "state" : "hot(reply to 3)",
+            "eventNr" : 6,
+            "event" : "DispatchReply(1,3)"
+          }
+        ]
       }
     ]
   },
   "Monitors" : {
     
   },
-  "ThreadAcquireRelease" : {
+  "MonotonicMonitor" : {
     "1" : [
       {
-        "type" : "TransitionOkReport",
+        "type" : "TransitionErrorReport",
         "msg" : null,
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(1),expect)",
-        "eventNr" : 5,
-        "event" : "release(1,10)",
+        "monitor" : "MonotonicMonitor",
+        "state" : "watch(1 seen, next should be 2)",
+        "eventNr" : 2,
+        "event" : "DispatchRequest(1,1)",
         "instance" : "1",
         "trace" : [
           {
             "state" : "always",
             "eventNr" : 1,
-            "event" : "acquire(1,10)"
+            "event" : "DispatchRequest(1,1)"
           },
           {
-            "state" : "hot(ID(1),expect)",
-            "eventNr" : 5,
-            "event" : "release(1,10)"
+            "state" : "watch(1 seen, next should be 2)",
+            "eventNr" : 2,
+            "event" : "DispatchRequest(1,1)"
           }
         ]
       },
       {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(1),expect)",
-        "eventNr" : 5,
-        "event" : "release(1,10)",
-        "instance" : "1"
-      }
-    ],
-    "10" : [
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "always",
-        "eventNr" : 1,
-        "event" : "acquire(1,10)",
-        "instance" : "10"
-      }
-    ],
-    "2" : [
-      {
-        "type" : "TransitionOkReport",
+        "type" : "TransitionErrorReport",
         "msg" : null,
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(2),expect)",
-        "eventNr" : 6,
-        "event" : "release(2,20)",
-        "instance" : "2",
+        "monitor" : "MonotonicMonitor",
+        "state" : "watch(1 seen, next should be 2)",
+        "eventNr" : 5,
+        "event" : "DispatchRequest(1,3)",
+        "instance" : "1",
         "trace" : [
           {
             "state" : "always",
             "eventNr" : 2,
-            "event" : "acquire(2,20)"
+            "event" : "DispatchRequest(1,1)"
           },
           {
-            "state" : "hot(ID(2),expect)",
-            "eventNr" : 6,
-            "event" : "release(2,20)"
+            "state" : "watch(1 seen, next should be 2)",
+            "eventNr" : 5,
+            "event" : "DispatchRequest(1,3)"
           }
         ]
-      },
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(2),expect)",
-        "eventNr" : 6,
-        "event" : "release(2,20)",
-        "instance" : "2"
-      }
-    ],
-    "20" : [
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "always",
-        "eventNr" : 2,
-        "event" : "acquire(2,20)",
-        "instance" : "20"
-      }
-    ],
-    "3" : [
-      {
-        "type" : "TransitionOkReport",
-        "msg" : null,
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(3),expect)",
-        "eventNr" : 7,
-        "event" : "release(3,30)",
-        "instance" : "3",
-        "trace" : [
-          {
-            "state" : "always",
-            "eventNr" : 3,
-            "event" : "acquire(3,30)"
-          },
-          {
-            "state" : "hot(ID(3),expect)",
-            "eventNr" : 7,
-            "event" : "release(3,30)"
-          }
-        ]
-      },
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(3),expect)",
-        "eventNr" : 7,
-        "event" : "release(3,30)",
-        "instance" : "3"
-      }
-    ],
-    "30" : [
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "always",
-        "eventNr" : 3,
-        "event" : "acquire(3,30)",
-        "instance" : "30"
-      }
-    ],
-    "4" : [
-      {
-        "type" : "TransitionOkReport",
-        "msg" : null,
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(4),expect)",
-        "eventNr" : 8,
-        "event" : "release(4,40)",
-        "instance" : "4",
-        "trace" : [
-          {
-            "state" : "always",
-            "eventNr" : 4,
-            "event" : "acquire(4,40)"
-          },
-          {
-            "state" : "hot(ID(4),expect)",
-            "eventNr" : 8,
-            "event" : "release(4,40)"
-          }
-        ]
-      },
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "hot(ID(4),expect)",
-        "eventNr" : 8,
-        "event" : "release(4,40)",
-        "instance" : "4"
-      }
-    ],
-    "40" : [
-      {
-        "type" : "TransitionReport",
-        "monitor" : "ThreadAcquireRelease",
-        "state" : "always",
-        "eventNr" : 4,
-        "event" : "acquire(4,40)",
-        "instance" : "40"
       }
     ]
   }
